@@ -13,7 +13,6 @@ import (
 	"github.com/OpenListTeam/OpenList/v4/internal/model"
 	"github.com/OpenListTeam/OpenList/v4/internal/setting"
 	"github.com/OpenListTeam/OpenList/v4/internal/stream"
-	"github.com/OpenListTeam/OpenList/v4/internal/task"
 	"github.com/OpenListTeam/OpenList/v4/pkg/utils"
 	"github.com/OpenListTeam/OpenList/v4/server/common"
 	"github.com/gin-gonic/gin"
@@ -51,7 +50,6 @@ func FsStream(c *gin.Context) {
 		common.ErrorResp(c, err, 400)
 		return
 	}
-	asTask := c.GetHeader("As-Task") == "true"
 	overwrite := c.GetHeader("Overwrite") != "false"
 	user := c.Request.Context().Value(conf.UserKey).(*model.User)
 	path, err = user.JoinPath(path)
@@ -104,27 +102,15 @@ func FsStream(c *gin.Context) {
 			Modified: getLastModified(c),
 			HashInfo: utils.NewHashInfoByMap(h),
 		},
-		Reader:       c.Request.Body,
-		Mimetype:     mimetype,
-		WebPutAsTask: asTask,
+		Reader:   c.Request.Body,
+		Mimetype: mimetype,
 	}
-	var t task.TaskExtensionInfo
-	if asTask {
-		t, err = fs.PutAsTask(c.Request.Context(), dir, s)
-	} else {
-		err = fs.PutDirectly(c.Request.Context(), dir, s)
-	}
+	err = fs.PutDirectly(c.Request.Context(), dir, s)
 	if err != nil {
 		common.ErrorResp(c, err, 500)
 		return
 	}
-	if t == nil {
-		common.SuccessResp(c)
-		return
-	}
-	common.SuccessResp(c, gin.H{
-		"task": getTaskInfo(t),
-	})
+	common.SuccessResp(c)
 }
 
 func FsForm(c *gin.Context) {
@@ -140,7 +126,6 @@ func FsForm(c *gin.Context) {
 		common.ErrorResp(c, err, 400)
 		return
 	}
-	asTask := c.GetHeader("As-Task") == "true"
 	overwrite := c.GetHeader("Overwrite") != "false"
 	user := c.Request.Context().Value(conf.UserKey).(*model.User)
 	path, err = user.JoinPath(path)
@@ -201,28 +186,13 @@ func FsForm(c *gin.Context) {
 			Modified: getLastModified(c),
 			HashInfo: utils.NewHashInfoByMap(h),
 		},
-		Reader:       f,
-		Mimetype:     mimetype,
-		WebPutAsTask: asTask,
+		Reader:   f,
+		Mimetype: mimetype,
 	}
-	var t task.TaskExtensionInfo
-	if asTask {
-		s.Reader = struct {
-			io.Reader
-		}{f}
-		t, err = fs.PutAsTask(c.Request.Context(), dir, s)
-	} else {
-		err = fs.PutDirectly(c.Request.Context(), dir, s)
-	}
+	err = fs.PutDirectly(c.Request.Context(), dir, s)
 	if err != nil {
 		common.ErrorResp(c, err, 500)
 		return
 	}
-	if t == nil {
-		common.SuccessResp(c)
-		return
-	}
-	common.SuccessResp(c, gin.H{
-		"task": getTaskInfo(t),
-	})
+	common.SuccessResp(c)
 }

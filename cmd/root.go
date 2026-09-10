@@ -6,7 +6,6 @@ import (
 
 	"github.com/OpenListTeam/OpenList/v4/cmd/flags"
 	_ "github.com/OpenListTeam/OpenList/v4/drivers"
-	_ "github.com/OpenListTeam/OpenList/v4/internal/archive"
 	"github.com/spf13/cobra"
 )
 

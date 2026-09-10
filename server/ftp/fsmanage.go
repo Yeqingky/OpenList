@@ -99,7 +99,7 @@ func Rename(ctx context.Context, oldPath, newPath string) error {
 				return err
 			}
 		}
-		_, err = fs.Move(ctx, stdpath.Join(srcDir, dstBase), dstDir)
+		err = fs.Move(ctx, stdpath.Join(srcDir, dstBase), dstDir)
 		return err
 	}
 }

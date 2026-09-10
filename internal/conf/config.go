@@ -59,21 +59,6 @@ type Filter struct {
 	Method string `json:"method"`
 }
 
-type TaskConfig struct {
-	Workers        int  `json:"workers" env:"WORKERS"`
-	MaxRetry       int  `json:"max_retry" env:"MAX_RETRY"`
-	TaskPersistant bool `json:"task_persistant" env:"TASK_PERSISTANT"`
-}
-
-type TasksConfig struct {
-	Upload             TaskConfig `json:"upload" envPrefix:"UPLOAD_"`
-	Copy               TaskConfig `json:"copy" envPrefix:"COPY_"`
-	Move               TaskConfig `json:"move" envPrefix:"MOVE_"`
-	Decompress         TaskConfig `json:"decompress" envPrefix:"DECOMPRESS_"`
-	DecompressUpload   TaskConfig `json:"decompress_upload" envPrefix:"DECOMPRESS_UPLOAD_"`
-	AllowRetryCanceled bool       `json:"allow_retry_canceled" env:"ALLOW_RETRY_CANCELED"`
-}
-
 type Cors struct {
 	AllowOrigins []string `json:"allow_origins" env:"ALLOW_ORIGINS"`
 	AllowMethods []string `json:"allow_methods" env:"ALLOW_METHODS"`
@@ -129,7 +114,6 @@ type Config struct {
 	MaxConnections        int         `json:"max_connections" env:"MAX_CONNECTIONS"`
 	MaxConcurrency        int         `json:"max_concurrency" env:"MAX_CONCURRENCY"`
 	TlsInsecureSkipVerify bool        `json:"tls_insecure_skip_verify" env:"TLS_INSECURE_SKIP_VERIFY"`
-	Tasks                 TasksConfig `json:"tasks" envPrefix:"TASKS_"`
 	Cors                  Cors        `json:"cors" envPrefix:"CORS_"`
 	S3                    S3          `json:"s3" envPrefix:"S3_"`
 	FTP                   FTP         `json:"ftp" envPrefix:"FTP_"`
@@ -187,31 +171,6 @@ func DefaultConfig(dataDir string) *Config {
 		MaxConnections:        0,
 		MaxConcurrency:        64,
 		TlsInsecureSkipVerify: false,
-		Tasks: TasksConfig{
-			Upload: TaskConfig{
-				Workers: 5,
-			},
-			Copy: TaskConfig{
-				Workers:  5,
-				MaxRetry: 2,
-				// TaskPersistant: true,
-			},
-			Move: TaskConfig{
-				Workers:  5,
-				MaxRetry: 2,
-				// TaskPersistant: true,
-			},
-			Decompress: TaskConfig{
-				Workers:  5,
-				MaxRetry: 2,
-				// TaskPersistant: true,
-			},
-			DecompressUpload: TaskConfig{
-				Workers:  5,
-				MaxRetry: 2,
-			},
-			AllowRetryCanceled: false,
-		},
 		Cors: Cors{
 			AllowOrigins: []string{"*"},
 			AllowMethods: []string{"*"},

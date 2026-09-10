@@ -2,14 +2,12 @@ package fs
 
 import (
 	"context"
-	"io"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/OpenListTeam/OpenList/v4/internal/driver"
 	"github.com/OpenListTeam/OpenList/v4/internal/model"
 	"github.com/OpenListTeam/OpenList/v4/internal/op"
-	"github.com/OpenListTeam/OpenList/v4/internal/task"
 )
 
 // the param named path of functions in this package is a mount path
@@ -66,28 +64,12 @@ func MakeDir(ctx context.Context, path string) error {
 	return err
 }
 
-func Move(ctx context.Context, srcPath, dstDirPath string, skipHook ...bool) (task.TaskExtensionInfo, error) {
-	req, err := transfer(ctx, move, srcPath, dstDirPath, skipHook...)
+func Move(ctx context.Context, srcPath, dstDirPath string, skipHook ...bool) error {
+	err := moveObj(ctx, srcPath, dstDirPath, skipHook...)
 	if err != nil {
 		log.Errorf("failed move %s to %s: %+v", srcPath, dstDirPath, err)
 	}
-	return req, err
-}
-
-func Copy(ctx context.Context, srcObjPath, dstDirPath string, skipHook ...bool) (task.TaskExtensionInfo, error) {
-	res, err := transfer(ctx, copy, srcObjPath, dstDirPath, skipHook...)
-	if err != nil {
-		log.Errorf("failed copy %s to %s: %+v", srcObjPath, dstDirPath, err)
-	}
-	return res, err
-}
-
-func Merge(ctx context.Context, srcObjPath, dstDirPath string, skipHook ...bool) (task.TaskExtensionInfo, error) {
-	res, err := transfer(ctx, merge, srcObjPath, dstDirPath, skipHook...)
-	if err != nil {
-		log.Errorf("failed merge %s to %s: %+v", srcObjPath, dstDirPath, err)
-	}
-	return res, err
+	return err
 }
 
 func Rename(ctx context.Context, srcPath, dstName string, skipHook ...bool) error {
@@ -112,54 +94,6 @@ func PutDirectly(ctx context.Context, dstDirPath string, file model.FileStreamer
 		log.Errorf("failed put %s: %+v", dstDirPath, err)
 	}
 	return err
-}
-
-func PutAsTask(ctx context.Context, dstDirPath string, file model.FileStreamer) (task.TaskExtensionInfo, error) {
-	t, err := putAsTask(ctx, dstDirPath, file)
-	if err != nil {
-		log.Errorf("failed put %s: %+v", dstDirPath, err)
-	}
-	return t, err
-}
-
-func ArchiveMeta(ctx context.Context, path string, args model.ArchiveMetaArgs) (*model.ArchiveMetaProvider, error) {
-	meta, err := archiveMeta(ctx, path, args)
-	if err != nil {
-		log.Errorf("failed get archive meta %s: %+v", path, err)
-	}
-	return meta, err
-}
-
-func ArchiveList(ctx context.Context, path string, args model.ArchiveListArgs) ([]model.Obj, error) {
-	objs, err := archiveList(ctx, path, args)
-	if err != nil {
-		log.Errorf("failed list archive [%s]%s: %+v", path, args.InnerPath, err)
-	}
-	return objs, err
-}
-
-func ArchiveDecompress(ctx context.Context, srcObjPath, dstDirPath string, args model.ArchiveDecompressArgs, lazyCache ...bool) (task.TaskExtensionInfo, error) {
-	t, err := archiveDecompress(ctx, srcObjPath, dstDirPath, args, lazyCache...)
-	if err != nil {
-		log.Errorf("failed decompress [%s]%s: %+v", srcObjPath, args.InnerPath, err)
-	}
-	return t, err
-}
-
-func ArchiveDriverExtract(ctx context.Context, path string, args model.ArchiveInnerArgs) (*model.Link, model.Obj, error) {
-	l, obj, err := archiveDriverExtract(ctx, path, args)
-	if err != nil {
-		log.Errorf("failed extract [%s]%s: %+v", path, args.InnerPath, err)
-	}
-	return l, obj, err
-}
-
-func ArchiveInternalExtract(ctx context.Context, path string, args model.ArchiveInnerArgs) (io.ReadCloser, int64, error) {
-	l, obj, err := archiveInternalExtract(ctx, path, args)
-	if err != nil {
-		log.Errorf("failed extract [%s]%s: %+v", path, args.InnerPath, err)
-	}
-	return l, obj, err
 }
 
 type GetStoragesArgs struct {

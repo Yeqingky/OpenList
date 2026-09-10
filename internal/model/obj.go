@@ -43,7 +43,6 @@ type FileStreamer interface {
 	utils.ClosersIF
 	Obj
 	GetMimetype() string
-	NeedStore() bool
 	IsForceStreamUpload() bool
 	GetExist() Obj
 	SetExist(Obj)

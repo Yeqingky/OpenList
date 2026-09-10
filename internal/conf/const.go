@@ -33,9 +33,7 @@ const (
 	AudioAutoplay                 = "audio_autoplay"
 	VideoAutoplay                 = "video_autoplay"
 	PreviewDownloadByDefault      = "preview_download_by_default"
-	PreviewArchivesByDefault      = "preview_archives_by_default"
 	SharePreviewDownloadByDefault = "share_preview_download_by_default"
-	SharePreviewArchivesByDefault = "share_preview_archives_by_default"
 	ReadMeAutoRender              = "readme_autorender"
 	FilterReadMeScripts           = "filter_readme_scripts"
 	NonEFSZipEncoding             = "non_efs_zip_encoding"
@@ -53,7 +51,6 @@ const (
 	IgnoreDirectLinkParams  = "ignore_direct_link_params"
 	WebauthnLoginEnabled    = "webauthn_login_enabled"
 	SharePreview            = "share_preview"
-	ShareArchivePreview     = "share_archive_preview"
 	ShareForceProxy         = "share_force_proxy"
 	ShareSummaryContent     = "share_summary_content"
 	HandleHookAfterWriting  = "handle_hook_after_writing"
@@ -113,17 +110,12 @@ const (
 	SFTPDisablePasswordLogin = "sftp_disable_password_login"
 
 	// traffic
-	TaskUploadThreadsNum             = "upload_task_threads_num"
-	TaskCopyThreadsNum               = "copy_task_threads_num"
-	TaskMoveThreadsNum               = "move_task_threads_num"
-	TaskDecompressDownloadThreadsNum = "decompress_download_task_threads_num"
-	TaskDecompressUploadThreadsNum   = "decompress_upload_task_threads_num"
-	StreamMaxClientDownloadSpeed     = "max_client_download_speed"
-	StreamMaxClientUploadSpeed       = "max_client_upload_speed"
-	StreamMaxServerDownloadSpeed     = "max_server_download_speed"
-	StreamMaxServerUploadSpeed       = "max_server_upload_speed"
-	MultipartEnabled                 = "multipart_enabled"
-	MultipartChunkSize               = "multipart_chunk_size"
+	StreamMaxClientDownloadSpeed = "max_client_download_speed"
+	StreamMaxClientUploadSpeed   = "max_client_upload_speed"
+	StreamMaxServerDownloadSpeed = "max_server_download_speed"
+	StreamMaxServerUploadSpeed   = "max_server_upload_speed"
+	MultipartEnabled             = "multipart_enabled"
+	MultipartChunkSize           = "multipart_chunk_size"
 )
 
 const (
@@ -142,7 +134,7 @@ type ContextKey int8
 const (
 	_ ContextKey = iota
 
-	NoTaskKey
+	_ // 1: reserved (was NoTaskKey)
 	ApiUrlKey
 	UserKey
 	MetaKey

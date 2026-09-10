@@ -11,7 +11,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"strconv"
 	"strings"
@@ -72,10 +71,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			status, err = h.handleDelete(brw, r)
 		case "PUT":
 			status, err = h.handlePut(brw, r)
-		case "MKCOL":
-			status, err = h.handleMkcol(brw, r)
-		case "COPY", "MOVE":
-			status, err = h.handleCopyMove(brw, r)
+		case "MKCOL", "COPY", "MOVE":
+			// intentionally removed: this instance only serves upload, download and delete
+			status, err = http.StatusMethodNotAllowed, errUnsupportedMethod
 		case "LOCK":
 			status, err = h.handleLock(brw, r)
 		case "UNLOCK":
@@ -203,12 +201,12 @@ func (h *Handler) handleOptions(w http.ResponseWriter, r *http.Request) (status 
 	if err != nil {
 		return http.StatusForbidden, err
 	}
-	allow := "OPTIONS, LOCK, PUT, MKCOL"
+	allow := "OPTIONS, LOCK, PUT"
 	if fi, err := fs.Get(ctx, reqPath, &fs.GetArgs{}); err == nil {
 		if fi.IsDir() {
-			allow = "OPTIONS, LOCK, DELETE, PROPPATCH, COPY, MOVE, UNLOCK, PROPFIND"
+			allow = "OPTIONS, LOCK, DELETE, PROPPATCH, UNLOCK, PROPFIND"
 		} else {
-			allow = "OPTIONS, LOCK, GET, HEAD, POST, DELETE, PROPPATCH, COPY, MOVE, UNLOCK, PROPFIND, PUT"
+			allow = "OPTIONS, LOCK, GET, HEAD, POST, DELETE, PROPPATCH, UNLOCK, PROPFIND, PUT"
 		}
 	}
 	w.Header().Set("Allow", allow)
@@ -421,145 +419,6 @@ func (h *Handler) handlePut(w http.ResponseWriter, r *http.Request) (status int,
 	}
 	w.Header().Set("Etag", etag)
 	return http.StatusCreated, nil
-}
-
-func (h *Handler) handleMkcol(w http.ResponseWriter, r *http.Request) (status int, err error) {
-	reqPath, status, err := h.stripPrefix(r.URL.Path)
-	if err != nil {
-		return status, err
-	}
-	release, status, err := h.confirmLocks(r, reqPath, "")
-	if err != nil {
-		return status, err
-	}
-	defer release()
-
-	ctx := r.Context()
-	user := ctx.Value(conf.UserKey).(*model.User)
-	reqPath, err = user.JoinPath(reqPath)
-	if err != nil {
-		return http.StatusForbidden, err
-	}
-
-	if r.ContentLength > 0 {
-		return http.StatusUnsupportedMediaType, nil
-	}
-
-	// RFC 4918 9.3.1
-	//405 (Method Not Allowed) - MKCOL can only be executed on an unmapped URL
-	if _, err := fs.Get(ctx, reqPath, &fs.GetArgs{}); err == nil {
-		return http.StatusMethodNotAllowed, err
-	}
-	// RFC 4918 9.3.1
-	// 409 (Conflict) The server MUST NOT create those intermediate collections automatically.
-	parentPath := path.Dir(reqPath)
-	if _, err := fs.Get(ctx, parentPath, &fs.GetArgs{}); err != nil {
-		if errs.IsObjectNotFound(err) {
-			return http.StatusConflict, err
-		}
-		return http.StatusMethodNotAllowed, err
-	}
-	parentMeta, err := op.GetNearestMeta(parentPath)
-	if err != nil && !errors.Is(errors.Cause(err), errs.MetaNotFound) {
-		return http.StatusInternalServerError, err
-	}
-	if !user.CanWriteContent() && !common.CanWriteContentBypassUserPerms(parentMeta, parentPath) {
-		return http.StatusForbidden, errs.PermissionDenied
-	}
-	if !common.CanWrite(user, parentMeta, parentPath) {
-		return http.StatusForbidden, errs.PermissionDenied
-	}
-	if err := fs.MakeDir(ctx, reqPath); err != nil {
-		if os.IsNotExist(err) {
-			return http.StatusConflict, err
-		}
-		return http.StatusMethodNotAllowed, err
-	}
-	return http.StatusCreated, nil
-}
-
-func (h *Handler) handleCopyMove(w http.ResponseWriter, r *http.Request) (status int, err error) {
-	hdr := r.Header.Get("Destination")
-	if hdr == "" {
-		return http.StatusBadRequest, errInvalidDestination
-	}
-	u, err := url.Parse(hdr)
-	if err != nil {
-		return http.StatusBadRequest, errInvalidDestination
-	}
-	if u.Host != "" && u.Host != r.Host {
-		return http.StatusBadGateway, errInvalidDestination
-	}
-
-	src, status, err := h.stripPrefix(r.URL.Path)
-	if err != nil {
-		return status, err
-	}
-
-	dst, status, err := h.stripPrefix(u.Path)
-	if err != nil {
-		return status, err
-	}
-
-	if dst == "" {
-		return http.StatusBadGateway, errInvalidDestination
-	}
-	if dst == src {
-		return http.StatusForbidden, errDestinationEqualsSource
-	}
-
-	ctx := r.Context()
-	user := ctx.Value(conf.UserKey).(*model.User)
-	src, err = user.JoinPath(src)
-	if err != nil {
-		return http.StatusForbidden, err
-	}
-	dst, err = user.JoinPath(dst)
-	if err != nil {
-		return http.StatusForbidden, err
-	}
-
-	if r.Method == "COPY" {
-		// Section 7.5.1 says that a COPY only needs to lock the destination,
-		// not both destination and source. Strictly speaking, this is racy,
-		// even though a COPY doesn't modify the source, if a concurrent
-		// operation modifies the source. However, the litmus test explicitly
-		// checks that COPYing a locked-by-another source is OK.
-		release, status, err := h.confirmLocks(r, "", dst)
-		if err != nil {
-			return status, err
-		}
-		defer release()
-
-		// Section 9.8.3 says that "The COPY method on a collection without a Depth
-		// header must act as if a Depth header with value "infinity" was included".
-		depth := infiniteDepth
-		if hdr := r.Header.Get("Depth"); hdr != "" {
-			depth = parseDepth(hdr)
-			if depth != 0 && depth != infiniteDepth {
-				// Section 9.8.3 says that "A client may submit a Depth header on a
-				// COPY on a collection with a value of "0" or "infinity"."
-				return http.StatusBadRequest, errInvalidDepth
-			}
-		}
-		return copyFiles(ctx, src, dst, r.Header.Get("Overwrite") != "F")
-	}
-
-	release, status, err := h.confirmLocks(r, src, dst)
-	if err != nil {
-		return status, err
-	}
-	defer release()
-
-	// Section 9.9.2 says that "The MOVE method on a collection must act as if
-	// a "Depth: infinity" header was used on it. A client must not submit a
-	// Depth header on a MOVE on a collection with any value but "infinity"."
-	if hdr := r.Header.Get("Depth"); hdr != "" {
-		if parseDepth(hdr) != infiniteDepth {
-			return http.StatusBadRequest, errInvalidDepth
-		}
-	}
-	return moveFiles(ctx, src, dst, r.Header.Get("Overwrite") == "T")
 }
 
 func (h *Handler) handleLock(w http.ResponseWriter, r *http.Request) (retStatus int, retErr error) {

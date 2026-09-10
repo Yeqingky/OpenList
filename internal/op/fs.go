@@ -221,6 +221,11 @@ func GetUnwrap(ctx context.Context, storage driver.Driver, path string) (model.O
 	return model.UnwrapObjName(obj), err
 }
 
+type objWithLink struct {
+	link *model.Link
+	obj  model.Obj
+}
+
 var linkG = singleflight.Group[*objWithLink]{}
 
 // Link get link, if is an url. should have an expiry time
@@ -498,71 +503,6 @@ func Rename(ctx context.Context, storage driver.Driver, srcPath, dstName string)
 		return nil
 	}
 	dstDirPath := stdpath.Dir(srcPath)
-	if !srcObj.IsDir() {
-		go objsUpdateHook(context.WithoutCancel(ctx), storage, dstDirPath, false)
-	} else {
-		go objsUpdateHook(context.WithoutCancel(ctx), storage, stdpath.Join(dstDirPath, srcObj.GetName()), true)
-	}
-	return nil
-}
-
-// Copy Just copy file[s] in a storage
-func Copy(ctx context.Context, storage driver.Driver, srcPath, dstDirPath string) error {
-	if storage.Config().CheckStatus && storage.GetStorage().Status != WORK {
-		return errors.WithMessagef(errs.StorageNotInit, "storage status: %s", storage.GetStorage().Status)
-	}
-	srcPath = utils.FixAndCleanPath(srcPath)
-	dstDirPath = utils.FixAndCleanPath(dstDirPath)
-	if dstDirPath == stdpath.Dir(srcPath) {
-		return errors.New("copy in place")
-	}
-	srcRawObj, err := Get(ctx, storage, srcPath, true)
-	if err != nil {
-		return errors.WithMessage(err, "failed to get src object")
-	}
-	// if model.ObjHasMask(srcRawObj, model.NoCopy) {
-	// 	return errors.WithStack(errs.PermissionDenied)
-	// }
-	srcObj := model.UnwrapObjName(srcRawObj)
-	dstDir, err := GetUnwrap(ctx, storage, dstDirPath)
-	if err != nil {
-		return errors.WithMessage(err, "failed to get dst dir")
-	}
-	if model.ObjHasMask(dstDir, model.NoWrite) {
-		return errors.WithStack(errs.PermissionDenied)
-	}
-
-	var newObj model.Obj
-	switch s := storage.(type) {
-	case driver.CopyResult:
-		newObj, err = s.Copy(ctx, srcObj, dstDir)
-	case driver.Copy:
-		err = s.Copy(ctx, srcObj, dstDir)
-	default:
-		err = errs.NotImplement
-	}
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	dstKey := Key(storage, dstDirPath)
-	if !srcRawObj.IsDir() {
-		Cache.linkCache.DeleteKey(stdpath.Join(dstKey, srcRawObj.GetName()))
-	}
-	if !storage.Config().NoCache {
-		if cache, exist := Cache.dirCache.Get(dstKey); exist {
-			if newObj == nil {
-				newObj = &model.ObjWrapMask{Obj: srcRawObj, Mask: model.Temp}
-			} else {
-				newObj = wrapObjName(storage, newObj)
-			}
-			cache.UpdateObject(srcRawObj.GetName(), newObj)
-		}
-	}
-
-	if ctx.Value(conf.SkipHookKey) != nil || !needHandleObjsUpdateHook() {
-		return nil
-	}
 	if !srcObj.IsDir() {
 		go objsUpdateHook(context.WithoutCancel(ctx), storage, dstDirPath, false)
 	} else {

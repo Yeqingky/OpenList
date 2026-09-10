@@ -6,17 +6,13 @@ package webdav
 
 import (
 	"context"
-	"net/http"
 	"path"
 	"path/filepath"
 
 	"github.com/OpenListTeam/OpenList/v4/internal/conf"
-	"github.com/OpenListTeam/OpenList/v4/internal/errs"
 	"github.com/OpenListTeam/OpenList/v4/internal/fs"
 	"github.com/OpenListTeam/OpenList/v4/internal/model"
 	"github.com/OpenListTeam/OpenList/v4/internal/op"
-	"github.com/OpenListTeam/OpenList/v4/server/common"
-	"github.com/pkg/errors"
 )
 
 // slashClean is equivalent to but slightly more efficient than
@@ -26,84 +22,6 @@ func slashClean(name string) string {
 		name = "/" + name
 	}
 	return path.Clean(name)
-}
-
-// moveFiles moves files and/or directories from src to dst.
-// Individual item permission checks are skipped for performance reasons.
-//
-// See section 9.9.4 for when various HTTP status codes apply.
-func moveFiles(ctx context.Context, src, dst string, overwrite bool) (status int, err error) {
-	srcDir := path.Dir(src)
-	dstDir := path.Dir(dst)
-	srcName := path.Base(src)
-	dstName := path.Base(dst)
-	user := ctx.Value(conf.UserKey).(*model.User)
-	if srcDir != dstDir && !user.CanMove() {
-		return http.StatusForbidden, nil
-	}
-	if srcName != dstName && !user.CanRename() {
-		return http.StatusForbidden, nil
-	}
-	srcMeta, err := op.GetNearestMeta(srcDir)
-	if err != nil && !errors.Is(errors.Cause(err), errs.MetaNotFound) {
-		return http.StatusInternalServerError, err
-	}
-	dstMeta, err := op.GetNearestMeta(dstDir)
-	if err != nil && !errors.Is(errors.Cause(err), errs.MetaNotFound) {
-		return http.StatusInternalServerError, err
-	}
-	if !common.CanWrite(user, srcMeta, srcDir) || !common.CanWrite(user, dstMeta, dstDir) {
-		return http.StatusForbidden, nil
-	}
-	if srcDir == dstDir {
-		err = fs.Rename(ctx, src, dstName)
-	} else {
-		_, err = fs.Move(context.WithValue(ctx, conf.NoTaskKey, struct{}{}), src, dstDir)
-		if err != nil {
-			return http.StatusInternalServerError, err
-		}
-		if srcName != dstName {
-			err = fs.Rename(ctx, path.Join(dstDir, srcName), dstName)
-		}
-	}
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-	// TODO if there are no files copy, should return 204
-	return http.StatusCreated, nil
-}
-
-// copyFiles copies files and/or directories from src to dst.
-// Individual item permission checks are skipped for performance reasons.
-//
-// See section 9.8.5 for when various HTTP status codes apply.
-func copyFiles(ctx context.Context, src, dst string, overwrite bool) (status int, err error) {
-	srcDir := path.Dir(src)
-	dstDir := path.Dir(dst)
-	user := ctx.Value(conf.UserKey).(*model.User)
-	if !user.CanCopy() {
-		return http.StatusForbidden, nil
-	}
-	srcMeta, err := op.GetNearestMeta(srcDir)
-	if err != nil && !errors.Is(errors.Cause(err), errs.MetaNotFound) {
-		return http.StatusInternalServerError, err
-	}
-	if !common.CanRead(user, srcMeta, srcDir) {
-		return http.StatusForbidden, nil
-	}
-	dstMeta, err := op.GetNearestMeta(dstDir)
-	if err != nil && !errors.Is(errors.Cause(err), errs.MetaNotFound) {
-		return http.StatusInternalServerError, err
-	}
-	if !common.CanWrite(user, dstMeta, dstDir) {
-		return http.StatusForbidden, nil
-	}
-	_, err = fs.Copy(context.WithValue(ctx, conf.NoTaskKey, struct{}{}), src, dstDir)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-	// TODO if there are no files copy, should return 204
-	return http.StatusCreated, nil
 }
 
 // walkFS traverses filesystem fs starting at name up to depth levels.

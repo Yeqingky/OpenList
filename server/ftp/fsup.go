@@ -114,7 +114,7 @@ func (f *FileUploadProxy) Close() error {
 					return
 				}
 			}
-			_, _ = fs.Move(ctx, stdpath.Join(dir, dstBase), dstDir)
+			_ = fs.Move(ctx, stdpath.Join(dir, dstBase), dstDir)
 		}
 	})
 	if err != nil {
@@ -129,19 +129,15 @@ func (f *FileUploadProxy) Close() error {
 			Size:     size,
 			Modified: time.Now(),
 		},
-		Mimetype:     contentType,
-		WebPutAsTask: true,
-		Reader:       f.buffer,
+		Mimetype: contentType,
+		Reader:   f.buffer,
 	}
 	s.Add(borrow)
-	task, err := fs.PutAsTask(f.ctx, dir, s)
-	if err != nil {
+	if err := fs.PutDirectly(f.ctx, dir, s); err != nil {
 		_ = s.Close()
 		return err
 	}
-	sf.SetRemoveCallback(func() {
-		fs.UploadTaskManager.Cancel(task.GetID())
-	})
+	_ = sf
 	return nil
 }
 
@@ -200,9 +196,8 @@ func (f *FileUploadWithLengthProxy) write(p []byte) (n int, err error) {
 				Size:     f.length,
 				Modified: time.Now(),
 			},
-			Mimetype:     contentType,
-			WebPutAsTask: false,
-			Reader:       reader,
+			Mimetype: contentType,
+			Reader:   reader,
 		}
 		go func() {
 			e := fs.PutDirectly(f.ctx, dir, s, true)
@@ -254,9 +249,8 @@ func (f *FileUploadWithLengthProxy) Close() error {
 				Size:     int64(f.pFirst),
 				Modified: time.Now(),
 			},
-			Mimetype:     contentType,
-			WebPutAsTask: false,
-			Reader:       bytes.NewReader(data),
+			Mimetype: contentType,
+			Reader:   bytes.NewReader(data),
 		}
 		return fs.PutDirectly(f.ctx, dir, s)
 	}
