@@ -28,9 +28,9 @@ func TestCreateStorage(t *testing.T) {
 		storage model.Storage
 		isErr   bool
 	}{
-		{storage: model.Storage{Driver: "Local", MountPath: "/local", Addition: `{"root_folder_path":"."}`}, isErr: false},
-		{storage: model.Storage{Driver: "Local", MountPath: "/local", Addition: `{"root_folder_path":"."}`}, isErr: true},
-		{storage: model.Storage{Driver: "None", MountPath: "/none", Addition: `{"root_folder_path":"."}`}, isErr: true},
+		{storage: model.Storage{Driver: "Template", MountPath: "/local", Addition: `{"field":"a"}`}, isErr: false},
+		{storage: model.Storage{Driver: "Template", MountPath: "/local", Addition: `{"field":"a"}`}, isErr: true},
+		{storage: model.Storage{Driver: "None", MountPath: "/none", Addition: `{"field":"a"}`}, isErr: true},
 	}
 	for _, storage := range storages {
 		_, err := op.CreateStorage(context.Background(), storage.storage)
@@ -73,13 +73,13 @@ func TestGetBalancedStorage(t *testing.T) {
 
 func setupStorages(t *testing.T) {
 	var storages = []model.Storage{
-		{Driver: "Local", MountPath: "/a/b", Order: 0, Addition: `{"root_folder_path":"."}`},
-		{Driver: "Local", MountPath: "/adc", Order: 0, Addition: `{"root_folder_path":"."}`},
-		{Driver: "Local", MountPath: "/a/c", Order: 1, Addition: `{"root_folder_path":"."}`},
-		{Driver: "Local", MountPath: "/a/d", Order: 2, Addition: `{"root_folder_path":"."}`},
-		{Driver: "Local", MountPath: "/a/d/e1", Order: 3, Addition: `{"root_folder_path":"."}`},
-		{Driver: "Local", MountPath: "/a/d/e", Order: 4, Addition: `{"root_folder_path":"."}`},
-		{Driver: "Local", MountPath: "/a/d/e1.balance", Order: 4, Addition: `{"root_folder_path":"."}`},
+		{Driver: "Template", MountPath: "/a/b", Order: 0, Addition: `{"field":"a"}`},
+		{Driver: "Template", MountPath: "/adc", Order: 0, Addition: `{"field":"a"}`},
+		{Driver: "Template", MountPath: "/a/c", Order: 1, Addition: `{"field":"a"}`},
+		{Driver: "Template", MountPath: "/a/d", Order: 2, Addition: `{"field":"a"}`},
+		{Driver: "Template", MountPath: "/a/d/e1", Order: 3, Addition: `{"field":"a"}`},
+		{Driver: "Template", MountPath: "/a/d/e", Order: 4, Addition: `{"field":"a"}`},
+		{Driver: "Template", MountPath: "/a/d/e1.balance", Order: 4, Addition: `{"field":"a"}`},
 	}
 	for _, storage := range storages {
 		_, err := op.CreateStorage(context.Background(), storage)
