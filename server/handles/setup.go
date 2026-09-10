@@ -53,11 +53,14 @@ func InitSetup(c *gin.Context) {
 		return
 	}
 	admin := &model.User{
-		Username:   req.Username,
-		Role:       model.ADMIN,
-		BasePath:   "/",
-		Authn:      "[]",
-		Permission: 0x71FF,
+		Username: req.Username,
+		Role:     model.ADMIN,
+		BasePath: "/",
+		Authn:    "[]",
+		// 0(can see hidden) - 8(webdav read) & 9(webdav manage) & 12(can read archives) - 14(can share)
+		// Both WebDAV bits are granted because WebDAV is the primary interface of
+		// this build, so writing through WebDAV works without a manual toggle.
+		Permission: 0x73FF,
 	}
 	admin.SetPassword(req.Password)
 	if err := op.CreateUser(admin); err != nil {
