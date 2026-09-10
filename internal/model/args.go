@@ -95,16 +95,6 @@ type ArchiveDecompressArgs struct {
 	Overwrite     bool
 }
 
-type SharingListArgs struct {
-	Refresh bool
-	Pwd     string
-}
-
-type SharingLinkArgs struct {
-	Pwd string
-	LinkArgs
-}
-
 type RangeReaderIF interface {
 	RangeRead(ctx context.Context, httpRange http_range.Range) (io.ReadCloser, error)
 }

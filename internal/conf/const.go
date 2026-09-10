@@ -24,19 +24,18 @@ const (
 	HideStorageDetailsInManagePage = "hide_storage_details_in_manage_page"
 
 	// preview
-	TextTypes                     = "text_types"
-	AudioTypes                    = "audio_types"
-	VideoTypes                    = "video_types"
-	ImageTypes                    = "image_types"
-	ProxyTypes                    = "proxy_types"
-	ProxyIgnoreHeaders            = "proxy_ignore_headers"
-	AudioAutoplay                 = "audio_autoplay"
-	VideoAutoplay                 = "video_autoplay"
-	PreviewDownloadByDefault      = "preview_download_by_default"
-	SharePreviewDownloadByDefault = "share_preview_download_by_default"
-	ReadMeAutoRender              = "readme_autorender"
-	FilterReadMeScripts           = "filter_readme_scripts"
-	NonEFSZipEncoding             = "non_efs_zip_encoding"
+	TextTypes                = "text_types"
+	AudioTypes               = "audio_types"
+	VideoTypes               = "video_types"
+	ImageTypes               = "image_types"
+	ProxyTypes               = "proxy_types"
+	ProxyIgnoreHeaders       = "proxy_ignore_headers"
+	AudioAutoplay            = "audio_autoplay"
+	VideoAutoplay            = "video_autoplay"
+	PreviewDownloadByDefault = "preview_download_by_default"
+	ReadMeAutoRender         = "readme_autorender"
+	FilterReadMeScripts      = "filter_readme_scripts"
+	NonEFSZipEncoding        = "non_efs_zip_encoding"
 
 	// global
 	HideFiles               = "hide_files"
@@ -50,9 +49,6 @@ const (
 	ForwardDirectLinkParams = "forward_direct_link_params"
 	IgnoreDirectLinkParams  = "ignore_direct_link_params"
 	WebauthnLoginEnabled    = "webauthn_login_enabled"
-	SharePreview            = "share_preview"
-	ShareForceProxy         = "share_force_proxy"
-	ShareSummaryContent     = "share_summary_content"
 	HandleHookAfterWriting  = "handle_hook_after_writing"
 	HandleHookRateLimit     = "handle_hook_rate_limit"
 	IgnoreSystemFiles       = "ignore_system_files"
@@ -130,6 +126,6 @@ const (
 	RequestHeaderKey
 	UserAgentKey
 	PathKey
-	SharingIDKey
+	_ // 11: reserved (was SharingIDKey), kept to preserve the context key numbering
 	SkipHookKey
 )

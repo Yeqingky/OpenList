@@ -48,10 +48,6 @@ func Init(e *gin.Engine) {
 	g.GET("/p/*path", middlewares.PathParse, signCheck, downloadLimiter, handles.Proxy)
 	g.HEAD("/d/*path", middlewares.PathParse, signCheck, handles.Down)
 	g.HEAD("/p/*path", middlewares.PathParse, signCheck, handles.Proxy)
-	g.GET("/sd/:sid", middlewares.EmptyPathParse, middlewares.SharingIdParse, downloadLimiter, handles.SharingDown)
-	g.GET("/sd/:sid/*path", middlewares.PathParse, middlewares.SharingIdParse, downloadLimiter, handles.SharingDown)
-	g.HEAD("/sd/:sid", middlewares.EmptyPathParse, middlewares.SharingIdParse, handles.SharingDown)
-	g.HEAD("/sd/:sid/*path", middlewares.PathParse, middlewares.SharingIdParse, handles.SharingDown)
 
 	api := g.Group("/api")
 	auth := api.Group("", middlewares.Auth(false))
@@ -87,8 +83,7 @@ func Init(e *gin.Engine) {
 	public.POST("/init/setup", handles.InitSetup)
 
 	_fs(auth.Group("/fs"))
-	fsAndShare(api.Group("/fs", middlewares.Auth(true)))
-	_sharing(auth.Group("/share", middlewares.AuthNotGuest))
+	fsRead(api.Group("/fs", middlewares.Auth(true)))
 	admin(auth.Group("/admin", middlewares.AuthAdmin))
 	if flags.Debug || flags.Dev {
 		debug(g.Group("/debug"))
@@ -155,7 +150,7 @@ func admin(g *gin.RouterGroup) {
 	scan.GET("/progress", handles.GetManualScanProgress)
 }
 
-func fsAndShare(g *gin.RouterGroup) {
+func fsRead(g *gin.RouterGroup) {
 	g.Any("/list", handles.FsListSplit)
 	g.Any("/get", handles.FsGetSplit)
 }
@@ -178,16 +173,6 @@ func _fs(g *gin.RouterGroup) {
 	g.POST("/link", middlewares.AuthAdmin, handles.Link)
 	// Direct upload (client-side upload to storage)
 	g.POST("/get_direct_upload_info", handles.FsGetDirectUploadInfo)
-}
-
-func _sharing(g *gin.RouterGroup) {
-	g.Any("/list", handles.ListSharings)
-	g.GET("/get", handles.GetSharing)
-	g.POST("/create", handles.CreateSharing)
-	g.POST("/update", handles.UpdateSharing)
-	g.POST("/delete", handles.DeleteSharing)
-	g.POST("/enable", handles.SetEnableSharing(false))
-	g.POST("/disable", handles.SetEnableSharing(true))
 }
 
 func Cors(r *gin.Engine) {
