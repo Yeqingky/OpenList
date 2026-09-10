@@ -5,7 +5,9 @@ go 1.26.0
 toolchain go1.27.1
 
 require (
+	github.com/KarpelesLab/reflink v1.0.2
 	github.com/OpenListTeam/go-cache v0.1.0
+	github.com/OpenListTeam/times v0.1.0
 	github.com/aliyun/aliyun-oss-go-sdk v3.0.2+incompatible
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/aws/aws-sdk-go v1.55.8
@@ -17,6 +19,7 @@ require (
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/coreos/go-oidc v2.5.0+incompatible
 	github.com/deckarep/golang-set/v2 v2.9.0
+	github.com/disintegration/imaging v1.6.2
 	github.com/dlclark/regexp2 v1.12.0
 	github.com/gin-contrib/cors v1.7.7
 	github.com/gin-gonic/gin v1.12.0
@@ -37,6 +40,8 @@ require (
 	github.com/sirupsen/logrus v1.10.2
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
+	github.com/u2takey/ffmpeg-go v0.5.0
+	golang.org/x/image v0.45.0
 	golang.org/x/net v0.58.0
 	golang.org/x/oauth2 v0.36.0
 	golang.org/x/time v0.15.0
@@ -72,6 +77,7 @@ require (
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/tinylib/msgp v1.6.4 // indirect
+	github.com/u2takey/go-utils v0.3.1 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/zeebo/blake3 v0.2.4 // indirect
 	github.com/zeebo/xxh3 v1.1.0 // indirect
