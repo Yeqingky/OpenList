@@ -10,8 +10,8 @@ const (
 	INDEX
 	SSO
 	LDAP
-	S3
-	FTP
+	_ // 9: reserved (was S3), kept to preserve the group numbering
+	_ // 10: reserved (was FTP), kept to preserve the group numbering
 	TRAFFIC
 )
 

@@ -172,22 +172,6 @@ func (u *User) CanWebdavManage() bool {
 	return CanWebdavManage(u.Permission)
 }
 
-func CanFTPAccess(permission int32) bool {
-	return (permission>>10)&1 == 1
-}
-
-func (u *User) CanFTPAccess() bool {
-	return CanFTPAccess(u.Permission)
-}
-
-func CanFTPManage(permission int32) bool {
-	return (permission>>11)&1 == 1
-}
-
-func (u *User) CanFTPManage() bool {
-	return CanFTPManage(u.Permission)
-}
-
 func CanReadArchives(permission int32) bool {
 	return (permission>>12)&1 == 1
 }

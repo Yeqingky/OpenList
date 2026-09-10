@@ -117,17 +117,7 @@ func WebDAVAuth(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	if (c.Request.Method == "PUT" || c.Request.Method == "MKCOL") && !user.CanWebdavManage() {
-		c.Status(http.StatusForbidden)
-		c.Abort()
-		return
-	}
-	if c.Request.Method == "MOVE" && !user.CanWebdavManage() {
-		c.Status(http.StatusForbidden)
-		c.Abort()
-		return
-	}
-	if c.Request.Method == "COPY" && !user.CanWebdavManage() {
+	if c.Request.Method == "PUT" && !user.CanWebdavManage() {
 		c.Status(http.StatusForbidden)
 		c.Abort()
 		return

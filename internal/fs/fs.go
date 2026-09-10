@@ -56,30 +56,6 @@ func Link(ctx context.Context, path string, args model.LinkArgs) (*model.Link, m
 	return res, file, nil
 }
 
-func MakeDir(ctx context.Context, path string) error {
-	err := makeDir(ctx, path)
-	if err != nil {
-		log.Errorf("failed make dir %s: %+v", path, err)
-	}
-	return err
-}
-
-func Move(ctx context.Context, srcPath, dstDirPath string, skipHook ...bool) error {
-	err := moveObj(ctx, srcPath, dstDirPath, skipHook...)
-	if err != nil {
-		log.Errorf("failed move %s to %s: %+v", srcPath, dstDirPath, err)
-	}
-	return err
-}
-
-func Rename(ctx context.Context, srcPath, dstName string, skipHook ...bool) error {
-	err := rename(ctx, srcPath, dstName, skipHook...)
-	if err != nil {
-		log.Errorf("failed rename %s to %s: %+v", srcPath, dstName, err)
-	}
-	return err
-}
-
 func Remove(ctx context.Context, path string) error {
 	err := remove(ctx, path)
 	if err != nil {
