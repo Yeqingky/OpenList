@@ -50,7 +50,7 @@ type User struct {
 	// Determine permissions by bit
 	//   0:  can see hidden files
 	//   1:  can access without password
-	//   2:  can add offline download tasks
+	//   2:  reserved (was: can add offline download tasks)
 	//   3:  can mkdir and upload
 	//   4:  can rename
 	//   5:  can move
@@ -114,14 +114,6 @@ func CanAccessWithoutPassword(permission int32) bool {
 
 func (u *User) CanAccessWithoutPassword() bool {
 	return CanAccessWithoutPassword(u.Permission)
-}
-
-func CanAddOfflineDownloadTasks(permission int32) bool {
-	return (permission>>2)&1 == 1
-}
-
-func (u *User) CanAddOfflineDownloadTasks() bool {
-	return CanAddOfflineDownloadTasks(u.Permission)
 }
 
 func CanWriteContent(permission int32) bool {

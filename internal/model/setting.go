@@ -6,7 +6,7 @@ const (
 	STYLE
 	PREVIEW
 	GLOBAL
-	OFFLINE_DOWNLOAD
+	_ // 5: reserved (was OFFLINE_DOWNLOAD), kept to preserve the group numbering
 	INDEX
 	SSO
 	LDAP
