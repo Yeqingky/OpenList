@@ -48,22 +48,10 @@ type User struct {
 	Role     int    `json:"role"`                                      // user's role
 	Disabled bool   `json:"disabled"`
 	// Determine permissions by bit
-	//   0:  can see hidden files
-	//   1:  can access without password
-	//   2:  reserved (was: can add offline download tasks)
-	//   3:  can mkdir and upload
-	//   4:  can rename
-	//   5:  can move
-	//   6:  can copy
-	//   7:  can remove
-	//   8:  webdav read
-	//   9:  webdav write
-	//   10: ftp/sftp login and read
-	//   11: ftp/sftp write
-	//   12: can read archives
-	//   13: can decompress archives
-	//   14: reserved (was: can share)
-	//   15: reserved (was: can customize share id)
+	//   0:  can mkdir and upload
+	//   1:  can remove
+	//   2:  webdav read
+	//   3:  webdav manage
 	Permission int32  `json:"permission"`
 	OtpSecret  string `json:"-"`
 	Authn      string `gorm:"type:text" json:"-"`
@@ -98,56 +86,16 @@ func (u *User) SetPassword(pwd string) *User {
 	return u
 }
 
-func CanSeeHides(permission int32) bool {
-	return permission&1 == 1
-}
-
-func (u *User) CanSeeHides() bool {
-	return CanSeeHides(u.Permission)
-}
-
-func CanAccessWithoutPassword(permission int32) bool {
-	return (permission>>1)&1 == 1
-}
-
-func (u *User) CanAccessWithoutPassword() bool {
-	return CanAccessWithoutPassword(u.Permission)
-}
-
 func CanWriteContent(permission int32) bool {
-	return (permission>>3)&1 == 1
+	return permission&1 == 1
 }
 
 func (u *User) CanWriteContent() bool {
 	return CanWriteContent(u.Permission)
 }
 
-func CanRename(permission int32) bool {
-	return (permission>>4)&1 == 1
-}
-
-func (u *User) CanRename() bool {
-	return CanRename(u.Permission)
-}
-
-func CanMove(permission int32) bool {
-	return (permission>>5)&1 == 1
-}
-
-func (u *User) CanMove() bool {
-	return CanMove(u.Permission)
-}
-
-func CanCopy(permission int32) bool {
-	return (permission>>6)&1 == 1
-}
-
-func (u *User) CanCopy() bool {
-	return CanCopy(u.Permission)
-}
-
 func CanRemove(permission int32) bool {
-	return (permission>>7)&1 == 1
+	return (permission>>1)&1 == 1
 }
 
 func (u *User) CanRemove() bool {
@@ -155,7 +103,7 @@ func (u *User) CanRemove() bool {
 }
 
 func CanWebdavRead(permission int32) bool {
-	return (permission>>8)&1 == 1
+	return (permission>>2)&1 == 1
 }
 
 func (u *User) CanWebdavRead() bool {
@@ -163,27 +111,11 @@ func (u *User) CanWebdavRead() bool {
 }
 
 func CanWebdavManage(permission int32) bool {
-	return (permission>>9)&1 == 1
+	return (permission>>3)&1 == 1
 }
 
 func (u *User) CanWebdavManage() bool {
 	return CanWebdavManage(u.Permission)
-}
-
-func CanReadArchives(permission int32) bool {
-	return (permission>>12)&1 == 1
-}
-
-func (u *User) CanReadArchives() bool {
-	return CanReadArchives(u.Permission)
-}
-
-func CanDecompress(permission int32) bool {
-	return (permission>>13)&1 == 1
-}
-
-func (u *User) CanDecompress() bool {
-	return CanDecompress(u.Permission)
 }
 
 func (u *User) JoinPath(reqPath string) (string, error) {

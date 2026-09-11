@@ -43,10 +43,10 @@ func initAdmin() {
 				Role:     model.ADMIN,
 				BasePath: "/",
 				Authn:    "[]",
-				// 0(can see hidden) - 8(webdav read) & 9(webdav manage) & 12(can read archives) - 13(can decompress)
+				// 0(upload) - 1(remove) - 2(webdav read) - 3(webdav manage)
 				// WebDAV is the primary interface of this build, so both WebDAV bits are
 				// granted by default and the admin can write through WebDAV right away.
-				Permission: 0x33FF,
+				Permission: 0x0F,
 			}
 			if err := op.CreateUser(admin); err != nil {
 				panic(err)

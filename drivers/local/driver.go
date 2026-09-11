@@ -287,32 +287,6 @@ func (d *Local) MakeDir(ctx context.Context, parentDir model.Obj, dirName string
 	return nil
 }
 
-func (d *Local) Move(ctx context.Context, srcObj, dstDir model.Obj) error {
-	srcPath := srcObj.GetPath()
-	dstPath := filepath.Join(dstDir.GetPath(), srcObj.GetName())
-	if utils.IsSubPath(srcPath, dstPath) {
-		return fmt.Errorf("the destination folder is a subfolder of the source folder")
-	}
-	err := os.Rename(srcPath, dstPath)
-	if isCrossDeviceError(err) {
-		// 跨设备移动，变更为移动任务
-		return errs.NotImplement
-	}
-	if err == nil {
-		srcParent := filepath.Dir(srcPath)
-		dstParent := filepath.Dir(dstPath)
-		if d.directoryMap.Has(srcParent) {
-			d.directoryMap.UpdateDirSize(srcParent)
-			d.directoryMap.UpdateDirParents(srcParent)
-		}
-		if d.directoryMap.Has(dstParent) {
-			d.directoryMap.UpdateDirSize(dstParent)
-			d.directoryMap.UpdateDirParents(dstParent)
-		}
-	}
-	return err
-}
-
 func (d *Local) Rename(ctx context.Context, srcObj model.Obj, newName string) error {
 	srcPath := srcObj.GetPath()
 	dstPath := filepath.Join(filepath.Dir(srcPath), newName)
@@ -326,29 +300,6 @@ func (d *Local) Rename(ctx context.Context, srcObj model.Obj, newName string) er
 			d.directoryMap.DeleteDirNode(srcPath)
 			d.directoryMap.CalculateDirSize(dstPath)
 		}
-	}
-
-	return nil
-}
-
-func (d *Local) Copy(_ context.Context, srcObj, dstDir model.Obj) error {
-	srcPath := srcObj.GetPath()
-	dstPath := filepath.Join(dstDir.GetPath(), srcObj.GetName())
-	if utils.IsSubPath(srcPath, dstPath) {
-		return fmt.Errorf("the destination folder is a subfolder of the source folder")
-	}
-	info, err := os.Lstat(srcPath)
-	if err != nil {
-		return err
-	}
-	// 复制regular文件会返回errs.NotImplement, 转为复制任务
-	if err = d.tryCopy(srcPath, dstPath, info); err != nil {
-		return err
-	}
-
-	if d.directoryMap.Has(filepath.Dir(dstPath)) {
-		d.directoryMap.UpdateDirSize(filepath.Dir(dstPath))
-		d.directoryMap.UpdateDirParents(filepath.Dir(dstPath))
 	}
 
 	return nil

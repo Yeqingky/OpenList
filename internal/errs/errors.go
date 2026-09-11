@@ -15,12 +15,6 @@ var (
 	UploadNotSupported = errors.New("upload not supported")
 	StorageNotFound    = errors.New("storage not found")
 	StorageNotInit     = errors.New("storage not init")
-	StreamIncomplete   = errors.New("upload/download stream incomplete, possible network issue")
-	StreamPeekFail     = errors.New("StreamPeekFail")
-
-	UnknownArchiveFormat      = errors.New("unknown archive format")
-	WrongArchivePassword      = errors.New("wrong archive password")
-	DriverExtractNotSupported = errors.New("driver extraction not supported")
 )
 
 // NewErr wrap constant error with an extra message

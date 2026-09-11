@@ -60,16 +60,8 @@ type Mkdir interface {
 	MakeDir(ctx context.Context, parentDir model.Obj, dirName string) error
 }
 
-type Move interface {
-	Move(ctx context.Context, srcObj, dstDir model.Obj) error
-}
-
 type Rename interface {
 	Rename(ctx context.Context, srcObj model.Obj, newName string) error
-}
-
-type Copy interface {
-	Copy(ctx context.Context, srcObj, dstDir model.Obj) error
 }
 
 type Remove interface {
@@ -107,16 +99,8 @@ type MkdirResult interface {
 	MakeDir(ctx context.Context, parentDir model.Obj, dirName string) (model.Obj, error)
 }
 
-type MoveResult interface {
-	Move(ctx context.Context, srcObj, dstDir model.Obj) (model.Obj, error)
-}
-
 type RenameResult interface {
 	Rename(ctx context.Context, srcObj model.Obj, newName string) (model.Obj, error)
-}
-
-type CopyResult interface {
-	Copy(ctx context.Context, srcObj, dstDir model.Obj) (model.Obj, error)
 }
 
 type PutResult interface {
@@ -144,42 +128,6 @@ type PutResult interface {
 	// limit the maximum number of upload threads, preventing excessive memory usage caused by buffering
 	// too many file chunks awaiting upload.
 	Put(ctx context.Context, dstDir model.Obj, file model.FileStreamer, up UpdateProgress) (model.Obj, error)
-}
-
-type ArchiveReader interface {
-	// GetArchiveMeta get the meta-info of an archive
-	// return errs.WrongArchivePassword if the meta-info is also encrypted but provided password is wrong or empty
-	// return errs.NotImplement to use internal archive tools to get the meta-info, such as the following cases:
-	// 1. the driver do not support the format of the archive but there may be an internal tool do
-	// 2. handling archives is a VIP feature, but the driver does not have VIP access
-	GetArchiveMeta(ctx context.Context, obj model.Obj, args model.ArchiveArgs) (model.ArchiveMeta, error)
-	// ListArchive list the children of model.ArchiveArgs.InnerPath in the archive
-	// return errs.NotImplement to use internal archive tools to list the children
-	// return errs.NotSupport if the folder structure should be acquired from model.ArchiveMeta.GetTree
-	ListArchive(ctx context.Context, obj model.Obj, args model.ArchiveInnerArgs) ([]model.Obj, error)
-	// Extract get url/filepath/reader of a file in the archive
-	// return errs.NotImplement to use internal archive tools to extract
-	Extract(ctx context.Context, obj model.Obj, args model.ArchiveInnerArgs) (*model.Link, error)
-}
-
-type ArchiveGetter interface {
-	// ArchiveGet get file by inner path
-	// return errs.NotImplement to use internal archive tools to get the children
-	// return errs.NotSupport if the folder structure should be acquired from model.ArchiveMeta.GetTree
-	ArchiveGet(ctx context.Context, obj model.Obj, args model.ArchiveInnerArgs) (model.Obj, error)
-}
-
-type ArchiveDecompress interface {
-	ArchiveDecompress(ctx context.Context, srcObj, dstDir model.Obj, args model.ArchiveDecompressArgs) error
-}
-
-type ArchiveDecompressResult interface {
-	// ArchiveDecompress decompress an archive
-	// when args.PutIntoNewDir, the new sub-folder should be named the same to the archive but without the extension
-	// return each decompressed obj from the root path of the archive when args.PutIntoNewDir is false
-	// return only the newly created folder when args.PutIntoNewDir is true
-	// return errs.NotImplement to use internal archive tools to decompress
-	ArchiveDecompress(ctx context.Context, srcObj, dstDir model.Obj, args model.ArchiveDecompressArgs) ([]model.Obj, error)
 }
 
 type Reference interface {
