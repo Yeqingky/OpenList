@@ -89,14 +89,6 @@ const (
 	LdapDefaultPermission = "ldap_default_permission"
 	LdapDefaultDir        = "ldap_default_dir"
 	LdapLoginTips         = "ldap_login_tips"
-
-	// traffic
-	StreamMaxClientDownloadSpeed = "max_client_download_speed"
-	StreamMaxClientUploadSpeed   = "max_client_upload_speed"
-	StreamMaxServerDownloadSpeed = "max_server_download_speed"
-	StreamMaxServerUploadSpeed   = "max_server_upload_speed"
-	MultipartEnabled             = "multipart_enabled"
-	MultipartChunkSize           = "multipart_chunk_size"
 )
 
 const (

@@ -3,9 +3,6 @@ package bootstrap
 import (
 	"context"
 
-	"github.com/OpenListTeam/OpenList/v4/internal/conf"
-	"github.com/OpenListTeam/OpenList/v4/internal/op"
-	"github.com/OpenListTeam/OpenList/v4/internal/setting"
 	"github.com/OpenListTeam/OpenList/v4/internal/stream"
 	"golang.org/x/time/rate"
 )
@@ -29,26 +26,16 @@ func (l blockBurstLimiter) WaitN(ctx context.Context, total int) error {
 	return nil
 }
 
-func streamFilterNegative(limit int) (rate.Limit, int) {
-	if limit < 0 {
-		return rate.Inf, 0
-	}
-	return rate.Limit(limit) * 1024.0, limit * 1024
-}
-
-func initLimiter(limiter *stream.Limiter, s string) {
-	clientDownLimit, burst := streamFilterNegative(setting.GetInt(s, -1))
-	*limiter = blockBurstLimiter{Limiter: rate.NewLimiter(clientDownLimit, burst)}
-	op.RegisterSettingChangingCallback(func() {
-		newLimit, newBurst := streamFilterNegative(setting.GetInt(s, -1))
-		(*limiter).SetLimit(newLimit)
-		(*limiter).SetBurst(newBurst)
-	})
-}
-
+// InitStreamLimit installs the stream limiters used by the download and upload
+// paths. The per-direction limits are no longer configurable, so every limiter
+// is installed unlimited and the wrappers stay in place for the callers that
+// already route through them.
 func InitStreamLimit() {
-	initLimiter(&stream.ClientDownloadLimit, conf.StreamMaxClientDownloadSpeed)
-	initLimiter(&stream.ClientUploadLimit, conf.StreamMaxClientUploadSpeed)
-	initLimiter(&stream.ServerDownloadLimit, conf.StreamMaxServerDownloadSpeed)
-	initLimiter(&stream.ServerUploadLimit, conf.StreamMaxServerUploadSpeed)
+	unlimited := func(limiter *stream.Limiter) {
+		*limiter = blockBurstLimiter{Limiter: rate.NewLimiter(rate.Inf, 0)}
+	}
+	unlimited(&stream.ClientDownloadLimit)
+	unlimited(&stream.ClientUploadLimit)
+	unlimited(&stream.ServerDownloadLimit)
+	unlimited(&stream.ServerUploadLimit)
 }

@@ -12,7 +12,7 @@ const (
 	LDAP
 	_ // 9: reserved (was S3), kept to preserve the group numbering
 	_ // 10: reserved (was FTP), kept to preserve the group numbering
-	TRAFFIC
+	_ // 11: reserved (was TRAFFIC), kept to preserve the group numbering
 )
 
 const (

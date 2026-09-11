@@ -211,14 +211,6 @@ func InitialSettings() []model.SettingItem {
 		{Key: conf.LdapDefaultDir, Value: "/", Type: conf.TypeString, Group: model.LDAP, Flag: model.PRIVATE},
 		{Key: conf.LdapDefaultPermission, Value: "0", Type: conf.TypeNumber, Group: model.LDAP, Flag: model.PRIVATE},
 		{Key: conf.LdapLoginTips, Value: "login with ldap", Type: conf.TypeString, Group: model.LDAP, Flag: model.PUBLIC},
-
-		// traffic settings
-		{Key: conf.StreamMaxClientDownloadSpeed, Value: "-1", Type: conf.TypeNumber, Group: model.TRAFFIC, Flag: model.PRIVATE},
-		{Key: conf.StreamMaxClientUploadSpeed, Value: "-1", Type: conf.TypeNumber, Group: model.TRAFFIC, Flag: model.PRIVATE},
-		{Key: conf.StreamMaxServerDownloadSpeed, Value: "-1", Type: conf.TypeNumber, Group: model.TRAFFIC, Flag: model.PRIVATE},
-		{Key: conf.StreamMaxServerUploadSpeed, Value: "-1", Type: conf.TypeNumber, Group: model.TRAFFIC, Flag: model.PRIVATE},
-		{Key: conf.MultipartEnabled, Value: "true", Type: conf.TypeBool, Group: model.TRAFFIC, Flag: model.PUBLIC},
-		{Key: conf.MultipartChunkSize, Value: "10", Type: conf.TypeNumber, Group: model.TRAFFIC, Flag: model.PUBLIC, Help: `chunk size of multipart upload in MB (positive integer), keep it under your CDN's request body limit; each active session buffers up to 8 chunks on the server's disk`},
 	}
 	if flags.Dev {
 		initialSettingItems = append(initialSettingItems, []model.SettingItem{

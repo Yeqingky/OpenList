@@ -13,7 +13,6 @@ import (
 	"github.com/OpenListTeam/OpenList/v4/internal/model"
 	"github.com/OpenListTeam/OpenList/v4/internal/multipart"
 	"github.com/OpenListTeam/OpenList/v4/internal/op"
-	"github.com/OpenListTeam/OpenList/v4/internal/setting"
 	"github.com/OpenListTeam/OpenList/v4/pkg/utils"
 	"github.com/OpenListTeam/OpenList/v4/server/common"
 	"github.com/gin-gonic/gin"
@@ -21,13 +20,17 @@ import (
 
 const multipartMinChunkSize = int64(1) << 20 // 1MB
 
+// multipartDefaultChunkSize is the chunk size used when the client does not ask
+// for something smaller. It used to be a configurable setting.
+const multipartDefaultChunkSize = int64(10) << 20 // 10MB
+
 // multipartChunkSize resolves the effective chunk size. The admin setting is
 // the ceiling: a client may suggest a smaller chunk via X-Chunk-Size but never
 // a larger one — the server buffers a window of several chunks per session, so
 // an unbounded client suggestion would translate directly into server-side
 // disk usage.
 func multipartChunkSize(requested int64) int64 {
-	ceiling := int64(setting.GetInt(conf.MultipartChunkSize, 10)) << 20
+	ceiling := multipartDefaultChunkSize
 	if ceiling < multipartMinChunkSize {
 		ceiling = multipartMinChunkSize
 	}
@@ -46,10 +49,6 @@ type MultipartInitResp struct {
 // MultipartInit creates (or resumes) a multipart upload session and starts its
 // upload pipeline. Headers mirror FsStream (fsup.go).
 func MultipartInit(c *gin.Context) {
-	if !setting.GetBool(conf.MultipartEnabled) {
-		common.ErrorStrResp(c, "multipart upload is disabled", 403)
-		return
-	}
 	path := c.GetHeader("File-Path")
 	path, err := url.PathUnescape(path)
 	if err != nil {
