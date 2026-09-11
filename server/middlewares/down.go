@@ -5,14 +5,9 @@ import (
 
 	"github.com/OpenListTeam/OpenList/v4/internal/conf"
 	"github.com/OpenListTeam/OpenList/v4/internal/setting"
-
-	"github.com/OpenListTeam/OpenList/v4/internal/errs"
-	"github.com/OpenListTeam/OpenList/v4/internal/model"
-	"github.com/OpenListTeam/OpenList/v4/internal/op"
 	"github.com/OpenListTeam/OpenList/v4/pkg/utils"
 	"github.com/OpenListTeam/OpenList/v4/server/common"
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
 )
 
 func PathParse(c *gin.Context) {
@@ -24,16 +19,10 @@ func PathParse(c *gin.Context) {
 func Down(verifyFunc func(string, string) error) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		rawPath := c.Request.Context().Value(conf.PathKey).(string)
-		meta, err := op.GetNearestMeta(rawPath)
-		if err != nil && !errors.Is(errors.Cause(err), errs.MetaNotFound) {
-			common.ErrorPage(c, err, 500, true)
-			return
-		}
-		common.GinAppendValues(c, conf.MetaKey, meta)
 		// verify sign
-		if needSign(meta, rawPath) {
+		if needSign(rawPath) {
 			s := c.Query("sign")
-			err = verifyFunc(rawPath, strings.TrimSuffix(s, "/"))
+			err := verifyFunc(rawPath, strings.TrimSuffix(s, "/"))
 			if err != nil {
 				common.ErrorPage(c, err, 401)
 				c.Abort()
@@ -50,18 +39,9 @@ func parsePath(path string) string {
 	return utils.FixAndCleanPath(path)
 }
 
-func needSign(meta *model.Meta, path string) bool {
+func needSign(path string) bool {
 	if setting.GetBool(conf.SignAll) {
 		return true
 	}
-	if common.IsStorageSignEnabled(path) {
-		return true
-	}
-	if meta == nil || meta.Password == "" {
-		return false
-	}
-	if !meta.PSub && !common.MetaCoversPath(meta.Path, path, false) {
-		return false
-	}
-	return true
+	return common.IsStorageSignEnabled(path)
 }

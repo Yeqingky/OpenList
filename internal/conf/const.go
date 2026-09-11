@@ -38,7 +38,6 @@ const (
 	NonEFSZipEncoding        = "non_efs_zip_encoding"
 
 	// global
-	HideFiles               = "hide_files"
 	CustomizeHead           = "customize_head"
 	CustomizeBody           = "customize_body"
 	LinkExpiration          = "link_expiration"
@@ -119,8 +118,6 @@ const (
 	_ // 1: reserved (was NoTaskKey)
 	ApiUrlKey
 	UserKey
-	MetaKey
-	MetaPassKey
 	ClientIPKey
 	ProxyHeaderKey
 	RequestHeaderKey

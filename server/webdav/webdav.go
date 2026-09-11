@@ -18,7 +18,6 @@ import (
 
 	"github.com/OpenListTeam/OpenList/v4/internal/conf"
 	"github.com/OpenListTeam/OpenList/v4/internal/net"
-	"github.com/OpenListTeam/OpenList/v4/internal/op"
 	"github.com/OpenListTeam/OpenList/v4/internal/setting"
 	"github.com/OpenListTeam/OpenList/v4/internal/stream"
 	"github.com/pkg/errors"
@@ -225,17 +224,9 @@ func (h *Handler) handleGetHeadPost(w http.ResponseWriter, r *http.Request) (sta
 	// TODO: check locks for read-only access??
 	ctx := r.Context()
 	user := ctx.Value(conf.UserKey).(*model.User)
-	password, _ := ctx.Value(conf.MetaPassKey).(string)
 	reqPath, err = user.JoinPath(reqPath)
 	if err != nil {
 		return http.StatusForbidden, err
-	}
-	meta, err := op.GetNearestMeta(reqPath)
-	if err != nil && !errors.Is(errors.Cause(err), errs.MetaNotFound) {
-		return http.StatusInternalServerError, err
-	}
-	if !common.CanAccess(user, meta, reqPath, password) {
-		return http.StatusForbidden, errs.PermissionDenied
 	}
 	fi, err := fs.Get(ctx, reqPath, &fs.GetArgs{})
 	if err != nil {
@@ -319,14 +310,6 @@ func (h *Handler) handleDelete(w http.ResponseWriter, r *http.Request) (status i
 		}
 		return http.StatusMethodNotAllowed, err
 	}
-	parentPath := path.Dir(reqPath)
-	parentMeta, err := op.GetNearestMeta(parentPath)
-	if err != nil && !errors.Is(errors.Cause(err), errs.MetaNotFound) {
-		return http.StatusInternalServerError, err
-	}
-	if !common.CanWrite(user, parentMeta, parentPath) {
-		return http.StatusForbidden, errs.PermissionDenied
-	}
 	if err := fs.Remove(ctx, reqPath); err != nil {
 		return http.StatusMethodNotAllowed, err
 	}
@@ -381,15 +364,7 @@ func (h *Handler) handlePut(w http.ResponseWriter, r *http.Request) (status int,
 	if setting.GetBool(conf.IgnoreSystemFiles) && utils.IsSystemFile(obj.Name) {
 		return http.StatusForbidden, errs.IgnoredSystemFile
 	}
-	parentPath := path.Dir(reqPath)
-	parentMeta, err := op.GetNearestMeta(parentPath)
-	if err != nil && !errors.Is(errors.Cause(err), errs.MetaNotFound) {
-		return http.StatusInternalServerError, err
-	}
-	if !user.CanWriteContent() && !common.CanWriteContentBypassUserPerms(parentMeta, parentPath) {
-		return http.StatusForbidden, errs.PermissionDenied
-	}
-	if !common.CanWrite(user, parentMeta, parentPath) {
+	if !user.CanWriteContent() {
 		return http.StatusForbidden, errs.PermissionDenied
 	}
 	fsStream := &stream.FileStream{
@@ -474,13 +449,6 @@ func (h *Handler) handleLock(w http.ResponseWriter, r *http.Request) (retStatus 
 		if err != nil {
 			return http.StatusForbidden, err
 		}
-		meta, err := op.GetNearestMeta(reqPath)
-		if err != nil && !errors.Is(errors.Cause(err), errs.MetaNotFound) {
-			return http.StatusInternalServerError, err
-		}
-		if !common.CanWrite(user, meta, reqPath) {
-			return http.StatusForbidden, errs.PermissionDenied
-		}
 		ld = LockDetails{
 			Root:      reqPath,
 			Duration:  duration,
@@ -547,13 +515,6 @@ func (h *Handler) handleUnlock(w http.ResponseWriter, r *http.Request) (status i
 	if err != nil {
 		return http.StatusForbidden, err
 	}
-	meta, err := op.GetNearestMeta(reqPath)
-	if err != nil && !errors.Is(errors.Cause(err), errs.MetaNotFound) {
-		return http.StatusInternalServerError, err
-	}
-	if !common.CanWrite(user, meta, reqPath) {
-		return http.StatusForbidden, errs.PermissionDenied
-	}
 
 	switch err = h.LockSystem.Unlock(time.Now(), t); err {
 	case nil:
@@ -578,17 +539,9 @@ func (h *Handler) handlePropfind(w http.ResponseWriter, r *http.Request) (status
 	userAgent := r.Header.Get("User-Agent")
 	ctx = context.WithValue(ctx, conf.UserAgentKey, userAgent)
 	user := ctx.Value(conf.UserKey).(*model.User)
-	password, _ := ctx.Value(conf.MetaPassKey).(string)
 	reqPath, err = user.JoinPath(reqPath)
 	if err != nil {
 		return http.StatusForbidden, err
-	}
-	meta, err := op.GetNearestMeta(reqPath)
-	if err != nil && !errors.Is(errors.Cause(err), errs.MetaNotFound) {
-		return http.StatusInternalServerError, err
-	}
-	if !common.CanAccess(user, meta, reqPath, password) {
-		return http.StatusForbidden, errs.PermissionDenied
 	}
 	fi, err := fs.Get(ctx, reqPath, &fs.GetArgs{})
 	if err != nil {
@@ -668,13 +621,6 @@ func (h *Handler) handleProppatch(w http.ResponseWriter, r *http.Request) (statu
 	reqPath, err = user.JoinPath(reqPath)
 	if err != nil {
 		return http.StatusForbidden, err
-	}
-	meta, err := op.GetNearestMeta(reqPath)
-	if err != nil && !errors.Is(errors.Cause(err), errs.MetaNotFound) {
-		return http.StatusInternalServerError, err
-	}
-	if !common.CanWrite(user, meta, reqPath) {
-		return http.StatusForbidden, errs.PermissionDenied
 	}
 	if _, err := fs.Get(ctx, reqPath, &fs.GetArgs{}); err != nil {
 		if errs.IsObjectNotFound(err) {

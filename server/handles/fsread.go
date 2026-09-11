@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/OpenListTeam/OpenList/v4/internal/conf"
-	"github.com/OpenListTeam/OpenList/v4/internal/errs"
+	"github.com/OpenListTeam/OpenList/v4/internal/driver"
 	"github.com/OpenListTeam/OpenList/v4/internal/fs"
 	"github.com/OpenListTeam/OpenList/v4/internal/model"
 	"github.com/OpenListTeam/OpenList/v4/internal/op"
@@ -16,19 +16,16 @@ import (
 	"github.com/OpenListTeam/OpenList/v4/pkg/utils"
 	"github.com/OpenListTeam/OpenList/v4/server/common"
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
 )
 
 type ListReq struct {
 	model.PageReq
-	Path     string `json:"path" form:"path"`
-	Password string `json:"password" form:"password"`
-	Refresh  bool   `json:"refresh"`
+	Path    string `json:"path" form:"path"`
+	Refresh bool   `json:"refresh"`
 }
 
 type DirReq struct {
 	Path      string `json:"path" form:"path"`
-	Password  string `json:"password" form:"password"`
 	ForceRoot bool   `json:"force_root" form:"force_root"`
 }
 
@@ -47,14 +44,13 @@ type ObjResp struct {
 }
 
 type FsListResp struct {
-	Content            []ObjResp `json:"content"`
-	Total              int64     `json:"total"`
-	Readme             string    `json:"readme"`
-	Header             string    `json:"header"`
-	Write              bool      `json:"write"`
-	WriteContentBypass bool      `json:"write_content_bypass"`
-	Provider           string    `json:"provider"`
-	DirectUploadTools  []string  `json:"direct_upload_tools,omitempty"`
+	Content           []ObjResp `json:"content"`
+	Total             int64     `json:"total"`
+	Provider          string    `json:"provider"`
+	DirectUploadTools []string  `json:"direct_upload_tools,omitempty"`
+	// Mkdir reports whether the storage driver behind this path implements
+	// driver.Mkdir, so the frontend can hide "new folder" when it cannot work.
+	Mkdir bool `json:"mkdir"`
 }
 
 func FsListSplit(c *gin.Context) {
@@ -78,17 +74,7 @@ func FsList(c *gin.Context, req *ListReq, user *model.User) {
 		common.ErrorResp(c, err, 403)
 		return
 	}
-	meta, err := op.GetNearestMeta(reqPath)
-	if err != nil && !errors.Is(errors.Cause(err), errs.MetaNotFound) {
-		common.ErrorResp(c, err, 500, true)
-		return
-	}
-	common.GinAppendValues(c, conf.MetaKey, meta)
-	if !common.CanAccess(user, meta, reqPath, req.Password) {
-		common.ErrorStrResp(c, "password is incorrect or you have no permission", 403)
-		return
-	}
-	canWriteContentAtPath := common.CanWrite(user, meta, reqPath) && (user.CanWriteContent() || common.CanWriteContentBypassUserPerms(meta, reqPath))
+	canWriteContentAtPath := user.CanWriteContent()
 	if req.Refresh && !canWriteContentAtPath {
 		common.ErrorStrResp(c, "Refresh without permission", 403)
 		return
@@ -104,20 +90,21 @@ func FsList(c *gin.Context, req *ListReq, user *model.User) {
 	total, objs := pagination(objs, &req.PageReq)
 	provider := "unknown"
 	var directUploadTools []string
-	if canWriteContentAtPath {
-		if storage, err := fs.GetStorage(reqPath, &fs.GetStoragesArgs{}); err == nil {
+	mkdir := false
+	if storage, err := fs.GetStorage(reqPath, &fs.GetStoragesArgs{}); err == nil {
+		_, canMkdir := storage.(driver.Mkdir)
+		_, canMkdirResult := storage.(driver.MkdirResult)
+		mkdir = canMkdir || canMkdirResult
+		if canWriteContentAtPath {
 			directUploadTools = op.GetDirectUploadTools(storage)
 		}
 	}
 	common.SuccessResp(c, FsListResp{
-		Content:            toObjsResp(objs, reqPath, isEncrypt(meta, reqPath)),
-		Total:              int64(total),
-		Readme:             getReadme(meta, reqPath),
-		Header:             getHeader(meta, reqPath),
-		Write:              common.CanWrite(user, meta, reqPath),
-		WriteContentBypass: common.CanWriteContentBypassUserPerms(meta, reqPath),
-		Provider:           provider,
-		DirectUploadTools:  directUploadTools,
+		Content:           toObjsResp(objs, reqPath, common.IsStorageSignEnabled(reqPath)),
+		Total:             int64(total),
+		Provider:          provider,
+		DirectUploadTools: directUploadTools,
+		Mkdir:             mkdir,
 	})
 }
 
@@ -141,16 +128,6 @@ func FsDirs(c *gin.Context) {
 			return
 		}
 		reqPath = tmp
-	}
-	meta, err := op.GetNearestMeta(reqPath)
-	if err != nil && !errors.Is(errors.Cause(err), errs.MetaNotFound) {
-		common.ErrorResp(c, err, 500, true)
-		return
-	}
-	common.GinAppendValues(c, conf.MetaKey, meta)
-	if !common.CanAccess(user, meta, reqPath, req.Password) {
-		common.ErrorStrResp(c, "password is incorrect or you have no permission", 403)
-		return
 	}
 	objs, err := fs.List(c.Request.Context(), reqPath, &fs.ListArgs{})
 	if err != nil {
@@ -177,33 +154,6 @@ func filterDirs(objs []model.Obj) []DirResp {
 		}
 	}
 	return dirs
-}
-
-func getReadme(meta *model.Meta, path string) string {
-	if meta != nil && common.MetaCoversPath(meta.Path, path, meta.RSub) {
-		return meta.Readme
-	}
-	return ""
-}
-
-func getHeader(meta *model.Meta, path string) string {
-	if meta != nil && common.MetaCoversPath(meta.Path, path, meta.HeaderSub) {
-		return meta.Header
-	}
-	return ""
-}
-
-func isEncrypt(meta *model.Meta, path string) bool {
-	if common.IsStorageSignEnabled(path) {
-		return true
-	}
-	if meta == nil || meta.Password == "" {
-		return false
-	}
-	if !common.MetaCoversPath(meta.Path, path, meta.PSub) {
-		return false
-	}
-	return true
 }
 
 func pagination(objs []model.Obj, req *model.PageReq) (int, []model.Obj) {
@@ -243,15 +193,12 @@ func toObjsResp(objs []model.Obj, parent string, encrypt bool) []ObjResp {
 }
 
 type FsGetReq struct {
-	Path     string `json:"path" form:"path"`
-	Password string `json:"password" form:"password"`
+	Path string `json:"path" form:"path"`
 }
 
 type FsGetResp struct {
 	ObjResp
 	RawURL   string    `json:"raw_url"`
-	Readme   string    `json:"readme"`
-	Header   string    `json:"header"`
 	Provider string    `json:"provider"`
 	Related  []ObjResp `json:"related"`
 }
@@ -274,16 +221,6 @@ func FsGet(c *gin.Context, req *FsGetReq, user *model.User) {
 	reqPath, err := user.JoinPath(req.Path)
 	if err != nil {
 		common.ErrorResp(c, err, 403)
-		return
-	}
-	meta, err := op.GetNearestMeta(reqPath)
-	if err != nil && !errors.Is(errors.Cause(err), errs.MetaNotFound) {
-		common.ErrorResp(c, err, 500, true)
-		return
-	}
-	common.GinAppendValues(c, conf.MetaKey, meta)
-	if !common.CanAccess(user, meta, reqPath, req.Password) {
-		common.ErrorStrResp(c, "password is incorrect or you have no permission", 403)
 		return
 	}
 	obj, err := fs.Get(c.Request.Context(), reqPath, &fs.GetArgs{
@@ -309,7 +246,7 @@ func FsGet(c *gin.Context, req *FsGetReq, user *model.User) {
 			rawURL = common.GenerateDownProxyURL(storage.GetStorage(), reqPath)
 			if rawURL == "" {
 				query := ""
-				if isEncrypt(meta, reqPath) || setting.GetBool(conf.SignAll) {
+				if common.IsStorageSignEnabled(reqPath) || setting.GetBool(conf.SignAll) {
 					query = "?sign=" + sign.Sign(reqPath)
 				}
 				rawURL = fmt.Sprintf("%s/p%s%s",
@@ -343,7 +280,6 @@ func FsGet(c *gin.Context, req *FsGetReq, user *model.User) {
 	if err == nil {
 		related = filterRelated(sameLevelFiles, obj)
 	}
-	parentMeta, _ := op.GetNearestMeta(parentPath)
 	thumb, _ := model.GetThumb(obj)
 	mountDetails, _ := model.GetStorageDetails(obj)
 	common.SuccessResp(c, FsGetResp{
@@ -355,16 +291,14 @@ func FsGet(c *gin.Context, req *FsGetReq, user *model.User) {
 			Created:      obj.CreateTime(),
 			HashInfoStr:  obj.GetHash().String(),
 			HashInfo:     obj.GetHash().Export(),
-			Sign:         common.Sign(obj, parentPath, isEncrypt(meta, reqPath)),
+			Sign:         common.Sign(obj, parentPath, common.IsStorageSignEnabled(reqPath)),
 			Type:         utils.GetFileType(obj.GetName()),
 			Thumb:        thumb,
 			MountDetails: mountDetails,
 		},
 		RawURL:   rawURL,
-		Readme:   getReadme(meta, reqPath),
-		Header:   getHeader(meta, reqPath),
 		Provider: provider,
-		Related:  toObjsResp(related, parentPath, isEncrypt(parentMeta, parentPath)),
+		Related:  toObjsResp(related, parentPath, common.IsStorageSignEnabled(parentPath)),
 	})
 }
 
@@ -384,7 +318,6 @@ func filterRelated(objs []model.Obj, obj model.Obj) []model.Obj {
 
 type FsOtherReq struct {
 	model.FsOtherArgs
-	Password string `json:"password" form:"password"`
 }
 
 func FsOther(c *gin.Context) {
@@ -398,16 +331,6 @@ func FsOther(c *gin.Context) {
 	req.Path, err = user.JoinPath(req.Path)
 	if err != nil {
 		common.ErrorResp(c, err, 403)
-		return
-	}
-	meta, err := op.GetNearestMeta(req.Path)
-	if err != nil && !errors.Is(errors.Cause(err), errs.MetaNotFound) {
-		common.ErrorResp(c, err, 500)
-		return
-	}
-	common.GinAppendValues(c, conf.MetaKey, meta)
-	if !common.CanAccess(user, meta, req.Path, req.Password) {
-		common.ErrorStrResp(c, "password is incorrect or you have no permission", 403)
 		return
 	}
 	res, err := fs.Other(c.Request.Context(), req.FsOtherArgs)

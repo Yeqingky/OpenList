@@ -8,6 +8,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+func makeDir(ctx context.Context, path string) error {
+	storage, actualPath, err := op.GetStorageAndActualPath(path)
+	if err != nil {
+		return errors.WithMessage(err, "failed get storage")
+	}
+	return op.MakeDir(ctx, storage, actualPath)
+}
+
 func remove(ctx context.Context, path string) error {
 	storage, actualPath, err := op.GetStorageAndActualPath(path)
 	if err != nil {

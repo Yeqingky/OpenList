@@ -94,13 +94,6 @@ func Init(e *gin.Engine) {
 }
 
 func admin(g *gin.RouterGroup) {
-	meta := g.Group("/meta")
-	meta.GET("/list", handles.ListMetas)
-	meta.GET("/get", handles.GetMeta)
-	meta.POST("/create", handles.CreateMeta)
-	meta.POST("/update", handles.UpdateMeta)
-	meta.POST("/delete", handles.DeleteMeta)
-
 	user := g.Group("/user")
 	user.GET("/list", handles.ListUsers)
 	user.GET("/get", handles.GetUser)
@@ -160,6 +153,7 @@ func _fs(g *gin.RouterGroup) {
 	g.Any("/other", handles.FsOther)
 	g.Any("/dirs", handles.FsDirs)
 	g.POST("/remove", handles.FsRemove)
+	g.POST("/mkdir", handles.FsMkdir)
 	uploadLimiter := middlewares.UploadRateLimiter(stream.ClientUploadLimit)
 	g.PUT("/put", middlewares.FsUp, uploadLimiter, handles.FsStream)
 	g.PUT("/form", middlewares.FsUp, uploadLimiter, handles.FsForm)

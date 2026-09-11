@@ -11,7 +11,6 @@ import (
 	"github.com/OpenListTeam/OpenList/v4/internal/op"
 	"github.com/OpenListTeam/OpenList/v4/server/common"
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
 )
 
 type FsGetDirectUploadInfoReq struct {
@@ -51,16 +50,7 @@ func FsGetDirectUploadInfo(c *gin.Context) {
 	dstPath := stdpath.Join(path, req.FileName)
 	path = stdpath.Dir(dstPath)
 	req.FileName = stdpath.Base(dstPath)
-	parentMeta, err := op.GetNearestMeta(path)
-	if err != nil && !errors.Is(errors.Cause(err), errs.MetaNotFound) {
-		common.ErrorResp(c, err, 500, true)
-		return
-	}
-	if !user.CanWriteContent() && !common.CanWriteContentBypassUserPerms(parentMeta, path) {
-		common.ErrorResp(c, errs.PermissionDenied, 403)
-		return
-	}
-	if !common.CanWrite(user, parentMeta, path) {
+	if !user.CanWriteContent() {
 		common.ErrorResp(c, errs.PermissionDenied, 403)
 		return
 	}

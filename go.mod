@@ -20,7 +20,6 @@ require (
 	github.com/coreos/go-oidc v2.5.0+incompatible
 	github.com/deckarep/golang-set/v2 v2.9.0
 	github.com/disintegration/imaging v1.6.2
-	github.com/dlclark/regexp2 v1.12.0
 	github.com/gin-contrib/cors v1.7.7
 	github.com/gin-gonic/gin v1.12.0
 	github.com/glebarez/sqlite v1.11.0

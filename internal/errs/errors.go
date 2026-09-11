@@ -13,7 +13,6 @@ var (
 	RelativePath = errors.New("using relative path is not allowed")
 
 	UploadNotSupported = errors.New("upload not supported")
-	MetaNotFound       = errors.New("meta not found")
 	StorageNotFound    = errors.New("storage not found")
 	StorageNotInit     = errors.New("storage not init")
 	StreamIncomplete   = errors.New("upload/download stream incomplete, possible network issue")

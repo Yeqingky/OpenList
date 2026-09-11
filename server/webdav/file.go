@@ -9,10 +9,8 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/OpenListTeam/OpenList/v4/internal/conf"
 	"github.com/OpenListTeam/OpenList/v4/internal/fs"
 	"github.com/OpenListTeam/OpenList/v4/internal/model"
-	"github.com/OpenListTeam/OpenList/v4/internal/op"
 )
 
 // slashClean is equivalent to but slightly more efficient than
@@ -44,9 +42,8 @@ func walkFS(ctx context.Context, depth int, name string, info model.Obj, walkFn 
 	if depth == 1 {
 		depth = 0
 	}
-	meta, _ := op.GetNearestMeta(name)
 	// Read directory names.
-	objs, err := fs.List(context.WithValue(ctx, conf.MetaKey, meta), name, &fs.ListArgs{})
+	objs, err := fs.List(ctx, name, &fs.ListArgs{})
 	//f, err := fs.OpenFile(ctx, name, os.O_RDONLY, 0)
 	//if err != nil {
 	//	return walkFn(name, info, err)

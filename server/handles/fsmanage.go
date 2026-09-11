@@ -9,12 +9,10 @@ import (
 	"github.com/OpenListTeam/OpenList/v4/internal/errs"
 	"github.com/OpenListTeam/OpenList/v4/internal/fs"
 	"github.com/OpenListTeam/OpenList/v4/internal/model"
-	"github.com/OpenListTeam/OpenList/v4/internal/op"
 	"github.com/OpenListTeam/OpenList/v4/internal/sign"
 	"github.com/OpenListTeam/OpenList/v4/pkg/utils"
 	"github.com/OpenListTeam/OpenList/v4/server/common"
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
 )
 
 type MkdirOrLinkReq struct {
@@ -26,6 +24,31 @@ func checkRelativePath(path string) error {
 		return errs.RelativePath
 	}
 	return nil
+}
+
+// FsMkdir creates a directory. It only works when the storage driver behind the
+// path implements driver.Mkdir; otherwise fs.MakeDir reports NotImplement.
+func FsMkdir(c *gin.Context) {
+	var req MkdirOrLinkReq
+	if err := c.ShouldBind(&req); err != nil {
+		common.ErrorResp(c, err, 400)
+		return
+	}
+	user := c.Request.Context().Value(conf.UserKey).(*model.User)
+	if !user.CanWriteContent() {
+		common.ErrorResp(c, errs.PermissionDenied, 403)
+		return
+	}
+	reqPath, err := user.JoinPath(req.Path)
+	if err != nil {
+		common.ErrorResp(c, err, 403)
+		return
+	}
+	if err := fs.MakeDir(c.Request.Context(), reqPath); err != nil {
+		common.ErrorResp(c, err, 500)
+		return
+	}
+	common.SuccessResp(c)
 }
 
 type RemoveReq struct {
@@ -52,15 +75,6 @@ func FsRemove(c *gin.Context) {
 	reqPath, err := user.JoinPath(req.Dir)
 	if err != nil {
 		common.ErrorResp(c, err, 403)
-		return
-	}
-	meta, err := op.GetNearestMeta(reqPath)
-	if err != nil && !errors.Is(errors.Cause(err), errs.MetaNotFound) {
-		common.ErrorResp(c, err, 500, true)
-		return
-	}
-	if !common.CanWrite(user, meta, reqPath) {
-		common.ErrorResp(c, errs.PermissionDenied, 403)
 		return
 	}
 	if !strings.HasSuffix(reqPath, "/") {

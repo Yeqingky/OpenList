@@ -133,11 +133,6 @@ func WebDAVAuth(c *gin.Context) {
 		return
 	}
 	common.GinAppendValues(c, conf.UserKey, user)
-	if user.IsGuest() {
-		common.GinAppendValues(c, conf.MetaPassKey, password)
-	} else {
-		common.GinAppendValues(c, conf.MetaPassKey, "")
-	}
 	c.Next()
 }
 

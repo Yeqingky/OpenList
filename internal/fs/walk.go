@@ -5,9 +5,7 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/OpenListTeam/OpenList/v4/internal/conf"
 	"github.com/OpenListTeam/OpenList/v4/internal/model"
-	"github.com/OpenListTeam/OpenList/v4/internal/op"
 )
 
 // WalkFS traverses filesystem fs starting at name up to depth levels.
@@ -27,9 +25,8 @@ func WalkFS(ctx context.Context, depth int, name string, info model.Obj, walkFn 
 	if !info.IsDir() || depth == 0 {
 		return nil
 	}
-	meta, _ := op.GetNearestMeta(name)
 	// Read directory names.
-	objs, err := List(context.WithValue(ctx, conf.MetaKey, meta), name, &ListArgs{})
+	objs, err := List(ctx, name, &ListArgs{})
 	if err != nil {
 		return walkFnErr
 	}
