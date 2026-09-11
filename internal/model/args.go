@@ -11,11 +11,10 @@ import (
 )
 
 type ListArgs struct {
-	ReqPath            string
-	S3ShowPlaceholder  bool
-	Refresh            bool
-	WithStorageDetails bool
-	SkipHook           bool
+	ReqPath           string
+	S3ShowPlaceholder bool
+	Refresh           bool
+	SkipHook          bool
 }
 
 type LinkArgs struct {

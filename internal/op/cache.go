@@ -12,11 +12,10 @@ import (
 )
 
 type CacheManager struct {
-	dirCache     *cache.KeyedCache[*directoryCache]       // Cache for directory listings
-	linkCache    *cache.TypedCache[*objWithLink]          // Cache for file links
-	userCache    *cache.KeyedCache[*model.User]           // Cache for user data
-	settingCache *cache.KeyedCache[any]                   // Cache for settings
-	detailCache  *cache.KeyedCache[*model.StorageDetails] // Cache for storage details
+	dirCache     *cache.KeyedCache[*directoryCache] // Cache for directory listings
+	linkCache    *cache.TypedCache[*objWithLink]    // Cache for file links
+	userCache    *cache.KeyedCache[*model.User]     // Cache for user data
+	settingCache *cache.KeyedCache[any]             // Cache for settings
 }
 
 func NewCacheManager() *CacheManager {
@@ -25,7 +24,6 @@ func NewCacheManager() *CacheManager {
 		linkCache:    cache.NewTypedCache[*objWithLink](time.Minute * 30),
 		userCache:    cache.NewKeyedCache[*model.User](time.Hour),
 		settingCache: cache.NewKeyedCache[any](time.Hour),
-		detailCache:  cache.NewKeyedCache[*model.StorageDetails](time.Minute * 30),
 	}
 }
 
@@ -128,29 +126,12 @@ func (cm *CacheManager) GetSettingGroup(key string) ([]model.SettingItem, bool) 
 	return nil, false
 }
 
-func (cm *CacheManager) SetStorageDetails(storage driver.Driver, details *model.StorageDetails) {
-	if storage.Config().NoCache {
-		return
-	}
-	expiration := time.Minute * time.Duration(storage.GetStorage().CacheExpiration)
-	cm.detailCache.SetWithTTL(utils.GetActualMountPath(storage.GetStorage().MountPath), details, expiration)
-}
-
-func (cm *CacheManager) GetStorageDetails(storage driver.Driver) (*model.StorageDetails, bool) {
-	return cm.detailCache.Get(utils.GetActualMountPath(storage.GetStorage().MountPath))
-}
-
-func (cm *CacheManager) InvalidateStorageDetails(storage driver.Driver) {
-	cm.detailCache.Delete(utils.GetActualMountPath(storage.GetStorage().MountPath))
-}
-
 // clears all caches
 func (cm *CacheManager) ClearAll() {
 	cm.dirCache.Clear()
 	cm.linkCache.Clear()
 	cm.userCache.Clear()
 	cm.settingCache.Clear()
-	cm.detailCache.Clear()
 }
 
 type directoryCache struct {

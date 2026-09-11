@@ -46,7 +46,7 @@ func TestCreateStorage(t *testing.T) {
 
 func TestGetStorageVirtualFilesByPath(t *testing.T) {
 	setupStorages(t)
-	virtualFiles := op.GetStorageVirtualFilesByPath("/a")
+	virtualFiles := op.GetStorageVirtualFilesByPath("/a", "")
 	var names []string
 	for _, virtualFile := range virtualFiles {
 		names = append(names, virtualFile.GetName())

@@ -1,7 +1,6 @@
 package model
 
 import (
-	"encoding/json"
 	"time"
 )
 
@@ -56,52 +55,4 @@ func (p Proxy) Webdav302() bool {
 
 func (p Proxy) WebdavProxyURL() bool {
 	return p.WebdavPolicy == "use_proxy_url"
-}
-
-type DiskUsage struct {
-	TotalSpace int64
-	UsedSpace  int64
-}
-
-func (d DiskUsage) FreeSpace() int64 {
-	return d.TotalSpace - d.UsedSpace
-}
-
-func (d DiskUsage) MarshalJSON() ([]byte, error) {
-	return json.Marshal(map[string]interface{}{
-		"total_space": d.TotalSpace,
-		"used_space":  d.UsedSpace,
-		"free_space":  d.FreeSpace(),
-	})
-}
-
-type StorageDetails struct {
-	DiskUsage
-}
-
-type ObjWithStorageDetails interface {
-	GetStorageDetails() *StorageDetails
-}
-
-type ObjStorageDetails struct {
-	Obj
-	*StorageDetails
-}
-
-func (o *ObjStorageDetails) Unwrap() Obj {
-	return o.Obj
-}
-
-func (o *ObjStorageDetails) GetStorageDetails() *StorageDetails {
-	return o.StorageDetails
-}
-
-func GetStorageDetails(obj Obj) (*StorageDetails, bool) {
-	if obj, ok := obj.(ObjWithStorageDetails); ok {
-		return obj.GetStorageDetails(), true
-	}
-	if unwrap, ok := obj.(ObjUnwrap); ok {
-		return GetStorageDetails(unwrap.Unwrap())
-	}
-	return nil, false
 }

@@ -30,17 +30,16 @@ type DirReq struct {
 }
 
 type ObjResp struct {
-	Name         string                     `json:"name"`
-	Size         int64                      `json:"size"`
-	IsDir        bool                       `json:"is_dir"`
-	Modified     time.Time                  `json:"modified"`
-	Created      time.Time                  `json:"created"`
-	Sign         string                     `json:"sign"`
-	Thumb        string                     `json:"thumb"`
-	Type         int                        `json:"type"`
-	HashInfoStr  string                     `json:"hashinfo"`
-	HashInfo     map[*utils.HashType]string `json:"hash_info"`
-	MountDetails *model.StorageDetails      `json:"mount_details,omitempty"`
+	Name        string                     `json:"name"`
+	Size        int64                      `json:"size"`
+	IsDir       bool                       `json:"is_dir"`
+	Modified    time.Time                  `json:"modified"`
+	Created     time.Time                  `json:"created"`
+	Sign        string                     `json:"sign"`
+	Thumb       string                     `json:"thumb"`
+	Type        int                        `json:"type"`
+	HashInfoStr string                     `json:"hashinfo"`
+	HashInfo    map[*utils.HashType]string `json:"hash_info"`
 }
 
 type FsListResp struct {
@@ -80,8 +79,7 @@ func FsList(c *gin.Context, req *ListReq, user *model.User) {
 		return
 	}
 	objs, err := fs.List(c.Request.Context(), reqPath, &fs.ListArgs{
-		Refresh:            req.Refresh,
-		WithStorageDetails: !user.IsGuest() && !setting.GetBool(conf.HideStorageDetails),
+		Refresh: req.Refresh,
 	})
 	if err != nil {
 		common.ErrorResp(c, err, 500)
@@ -174,19 +172,17 @@ func toObjsResp(objs []model.Obj, parent string, encrypt bool) []ObjResp {
 	var resp []ObjResp
 	for _, obj := range objs {
 		thumb, _ := model.GetThumb(obj)
-		mountDetails, _ := model.GetStorageDetails(obj)
 		resp = append(resp, ObjResp{
-			Name:         obj.GetName(),
-			Size:         obj.GetSize(),
-			IsDir:        obj.IsDir(),
-			Modified:     obj.ModTime(),
-			Created:      obj.CreateTime(),
-			HashInfoStr:  obj.GetHash().String(),
-			HashInfo:     obj.GetHash().Export(),
-			Sign:         common.Sign(obj, parent, encrypt),
-			Thumb:        thumb,
-			Type:         utils.GetObjType(obj.GetName(), obj.IsDir()),
-			MountDetails: mountDetails,
+			Name:        obj.GetName(),
+			Size:        obj.GetSize(),
+			IsDir:       obj.IsDir(),
+			Modified:    obj.ModTime(),
+			Created:     obj.CreateTime(),
+			HashInfoStr: obj.GetHash().String(),
+			HashInfo:    obj.GetHash().Export(),
+			Sign:        common.Sign(obj, parent, encrypt),
+			Thumb:       thumb,
+			Type:        utils.GetObjType(obj.GetName(), obj.IsDir()),
 		})
 	}
 	return resp
@@ -223,9 +219,7 @@ func FsGet(c *gin.Context, req *FsGetReq, user *model.User) {
 		common.ErrorResp(c, err, 403)
 		return
 	}
-	obj, err := fs.Get(c.Request.Context(), reqPath, &fs.GetArgs{
-		WithStorageDetails: !user.IsGuest() && !setting.GetBool(conf.HideStorageDetails),
-	})
+	obj, err := fs.Get(c.Request.Context(), reqPath, &fs.GetArgs{})
 	if err != nil {
 		common.ErrorResp(c, err, 500)
 		return
@@ -281,20 +275,18 @@ func FsGet(c *gin.Context, req *FsGetReq, user *model.User) {
 		related = filterRelated(sameLevelFiles, obj)
 	}
 	thumb, _ := model.GetThumb(obj)
-	mountDetails, _ := model.GetStorageDetails(obj)
 	common.SuccessResp(c, FsGetResp{
 		ObjResp: ObjResp{
-			Name:         obj.GetName(),
-			Size:         obj.GetSize(),
-			IsDir:        obj.IsDir(),
-			Modified:     obj.ModTime(),
-			Created:      obj.CreateTime(),
-			HashInfoStr:  obj.GetHash().String(),
-			HashInfo:     obj.GetHash().Export(),
-			Sign:         common.Sign(obj, parentPath, common.IsStorageSignEnabled(reqPath)),
-			Type:         utils.GetFileType(obj.GetName()),
-			Thumb:        thumb,
-			MountDetails: mountDetails,
+			Name:        obj.GetName(),
+			Size:        obj.GetSize(),
+			IsDir:       obj.IsDir(),
+			Modified:    obj.ModTime(),
+			Created:     obj.CreateTime(),
+			HashInfoStr: obj.GetHash().String(),
+			HashInfo:    obj.GetHash().Export(),
+			Sign:        common.Sign(obj, parentPath, common.IsStorageSignEnabled(reqPath)),
+			Type:        utils.GetFileType(obj.GetName()),
+			Thumb:       thumb,
 		},
 		RawURL:   rawURL,
 		Provider: provider,

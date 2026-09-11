@@ -68,7 +68,7 @@ func RecursivelyList(ctx context.Context, rawPath string, limit rate.Limit, coun
 }
 
 func recursivelyListVirtual(ctx context.Context, rawPath string, limit rate.Limit, counter *atomic.Uint64, wg *sync.WaitGroup) {
-	objs := GetStorageVirtualFilesByPath(rawPath)
+	objs := GetStorageVirtualFilesByPath(rawPath, "")
 	if counter != nil {
 		counter.Add(uint64(len(objs)))
 	}
