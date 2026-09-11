@@ -55,7 +55,6 @@ func Init(e *gin.Engine) {
 
 	api.POST("/auth/login", handles.Login)
 	api.POST("/auth/login/hash", handles.LoginHash)
-	api.POST("/auth/login/ldap", handles.LoginLdap)
 	auth.GET("/me", handles.CurrentUser)
 	auth.POST("/me/update", handles.UpdateCurrent)
 	auth.POST("/auth/2fa/generate", handles.Generate2FA)
@@ -63,10 +62,6 @@ func Init(e *gin.Engine) {
 	auth.GET("/auth/logout", handles.LogOut)
 
 	// auth
-	api.GET("/auth/sso", handles.SSOLoginRedirect)
-	api.GET("/auth/sso_callback", handles.SSOLoginCallback)
-	api.GET("/auth/get_sso_id", handles.SSOLoginCallback)
-	api.GET("/auth/sso_get_token", handles.SSOLoginCallback)
 
 	// webauthn
 	api.GET("/authn/webauthn_begin_login", handles.BeginAuthnLogin)

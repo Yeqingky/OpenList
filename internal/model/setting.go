@@ -8,8 +8,8 @@ const (
 	GLOBAL
 	_ // 5: reserved (was OFFLINE_DOWNLOAD), kept to preserve the group numbering
 	INDEX
-	SSO
-	LDAP
+	_ // 7: reserved (was SSO, removed with the single sign-on feature)
+	_ // 8: reserved (was LDAP, removed with the LDAP feature)
 	_ // 9: reserved (was S3), kept to preserve the group numbering
 	_ // 10: reserved (was FTP), kept to preserve the group numbering
 	_ // 11: reserved (was TRAFFIC), kept to preserve the group numbering
